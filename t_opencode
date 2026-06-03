@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Launch OpenCode against a site from sites.json. See README.md / AGENTS.md.
+set -euo pipefail
+# shellcheck source=lib/maas.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/maas.sh"
+maas_run_opencode "$@"

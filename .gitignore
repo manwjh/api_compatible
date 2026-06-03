@@ -1,0 +1,12 @@
+# Secrets & local runtime
+.env
+.claude/
+.runtime/
+opencode.json
+
+# Optional upstream clones (see scripts/pull-upstream.sh)
+opencode/
+newapi/
+
+# OS
+.DS_Store

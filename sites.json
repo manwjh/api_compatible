@@ -1,0 +1,23 @@
+{
+  "description": "Upstream site registry. API keys live in .env — see each site's api_key_env.",
+  "default_site": "b.ai",
+  "sites": {
+    "b.ai": {
+      "name": "b.ai",
+      "base_url": "https://api.b.ai/v1",
+      "anthropic_base_url": "https://api.b.ai",
+      "api_key_env": "BAI_API_KEY",
+      "opencode": {
+        "provider_id": "bai",
+        "provider_name": "b.ai",
+        "npm": "@ai-sdk/openai-compatible"
+      },
+      "default_models": {
+        "claude": "claude-haiku-4.5",
+        "codex": "gpt-5-mini",
+        "opencode": "kimi-k2.5"
+      },
+      "notes": "Chat Completions + Messages API; no /v1/responses (Codex blocked)"
+    }
+  }
+}

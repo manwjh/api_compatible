@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "bai/kimi-k2.5",
+  "provider": {
+    "bai": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "b.ai",
+      "options": {
+        "baseURL": "https://api.b.ai/v1",
+        "apiKey": "YOUR_API_KEY"
+      },
+      "models": {
+        "kimi-k2.5": { "name": "Kimi K2.5" }
+      }
+    }
+  }
+}
