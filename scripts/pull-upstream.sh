@@ -28,14 +28,15 @@ pull_repo() {
 
 usage() {
   cat <<'EOF'
-Usage: scripts/pull-upstream.sh [opencode|newapi|all]
+Usage: scripts/pull-upstream.sh [opencode|newapi|codex|all]
 
 Pull optional upstream reference code into the project root.
 These directories are gitignored and not needed to run ./t_claude / t_codex / t_opencode.
 
   opencode   anomalyco/opencode (branch dev)
   newapi     QuantumNous/new-api (branch main)
-  all        both (default)
+  codex      openai/codex (branch main)
+  all        opencode + newapi + codex (default)
 EOF
 }
 
@@ -51,9 +52,13 @@ case "$target" in
   newapi)
     pull_repo newapi https://github.com/QuantumNous/new-api main
     ;;
+  codex)
+    pull_repo codex https://github.com/openai/codex main
+    ;;
   all)
     pull_repo opencode https://github.com/anomalyco/opencode dev
     pull_repo newapi https://github.com/QuantumNous/new-api main
+    pull_repo codex https://github.com/openai/codex main
     ;;
   *)
     echo "Unknown target: $target" >&2

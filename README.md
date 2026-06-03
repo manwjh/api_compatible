@@ -8,7 +8,7 @@
 | **Token 中转站** | 聚合/转售，常裁剪端点 | b.ai、New API、One API、LiteLLM |
 
 本仓库提供：**站点注册 + 启动器 + 评估方法论**，不是 SDK。  
-协议参考见 **[docs/E2E原生兼容性全景.md](./docs/E2E原生兼容性全景.md)**；具体测试结果见 **[docs/reports/](./docs/reports/)**。
+协议参考见 **[docs/E2E原生兼容性全景.md](./docs/E2E原生兼容性全景.md)**；Codex 产品架构见 **[docs/Codex技术架构调研.md](./docs/Codex技术架构调研.md)**；Token 中转站技术栈见 **[docs/中转站主流技术栈调研.md](./docs/中转站主流技术栈调研.md)**；非原生组合的网关/转换方案见 **[docs/编程Agent模型转换插件调研.md](./docs/编程Agent模型转换插件调研.md)**；AWS EC2 隔离实验点见 **[docs/AWS-EC2隔离实验点设计.md](./docs/AWS-EC2隔离实验点设计.md)**；具体测试结果见 **[docs/reports/](./docs/reports/)**。
 
 ---
 
@@ -31,11 +31,15 @@ api_compatible/
 │   └── maas.py                    # sites.json 解析、拉模型、写临时配置
 │
 ├── scripts/
-│   ├── pull-upstream.sh           # 按需拉取 opencode / newapi 参考源码
+│   ├── pull-upstream.sh           # 按需拉取 opencode / newapi / codex 参考源码
 │   └── probe-endpoints.sh         # 探测站点 HTTP 端点（协议矩阵）
 │
 └── docs/
     ├── E2E原生兼容性全景.md           # 上游 × Agent 原生 E2E 兼容矩阵
+    ├── Codex技术架构调研.md           # Codex harness / CLI / App Server 架构
+    ├── 中转站主流技术栈调研.md         # One API / LiteLLM / 商业 Token 站实现栈
+    ├── 编程Agent模型转换插件调研.md    # 网关 / 协议转换 / 插件边界（方案地图）
+    ├── AWS-EC2隔离实验点设计.md       # 云上 LiteLLM 实验点 + 出站审计方法论
     └── reports/                   # 兼容性评估报告（按站点 × Agent）
 ```
 
@@ -48,7 +52,7 @@ api_compatible/
 | `.runtime/codex.*.toml` | `t_codex` 临时配置 |
 | `.runtime/opencode.*.json` | `t_opencode` 临时配置 |
 | `opencode.json` | 手工 OpenCode 配置（可选；含密钥时不提交） |
-| `opencode/`, `newapi/` | 上游参考源码（`scripts/pull-upstream.sh` 拉取） |
+| `opencode/`, `newapi/`, `codex/` | 上游参考源码（`scripts/pull-upstream.sh` 拉取） |
 
 完整规则见 **[AGENTS.md](./AGENTS.md)**。
 
@@ -125,7 +129,7 @@ flowchart LR
 
 ## 协议参考
 
-各 Agent 硬性依赖与 **E2E 原生兼容性全景** 见 **[docs/E2E原生兼容性全景.md](./docs/E2E原生兼容性全景.md)**。中转站裁剪与实测见 **[docs/reports/](./docs/reports/)**。
+各 Agent 硬性依赖与 **E2E 原生兼容性全景** 见 **[docs/E2E原生兼容性全景.md](./docs/E2E原生兼容性全景.md)**。中转站实现栈与端点探测方法见 **[docs/中转站主流技术栈调研.md](./docs/中转站主流技术栈调研.md)**；云上 LiteLLM 隔离实验见 **[docs/AWS-EC2隔离实验点设计.md](./docs/AWS-EC2隔离实验点设计.md)**；站点 × Agent 实测见 **[docs/reports/](./docs/reports/)**。
 
 ---
 
@@ -150,7 +154,7 @@ flowchart TD
 
 **新增 Agent**：仿 `t_*` + `lib/maas.sh` 中 `maas_run_*`，并在 `docs/reports/` 新增报告。  
 **评估云厂商 API**：对照 [E2E 原生兼容性全景](./docs/E2E原生兼容性全景.md) 中的官方集成，再接入 `./t_*`。  
-**评估中转站**：额外核对是否裁剪 `/v1/responses`、Base URL 形态、模型 ID。
+**评估中转站**：先读 [中转站主流技术栈调研](./docs/中转站主流技术栈调研.md)，再 `./scripts/probe-endpoints.sh` 核对是否裁剪 `/v1/responses`、Base URL 形态、模型 ID。
 
 ---
 

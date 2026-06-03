@@ -7,6 +7,7 @@ opencode.json
 # Optional upstream clones (see scripts/pull-upstream.sh)
 opencode/
 newapi/
+codex/
 
 # OS
 .DS_Store
