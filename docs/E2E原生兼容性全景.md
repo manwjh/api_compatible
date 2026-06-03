@@ -234,7 +234,7 @@ flowchart TB
   CLW --> CLU["● Anthropic · Bedrock · Vertex Claude · Foundry · Claude AWS"]
 ```
 
-### 6.2 官方集成一览（四列，无跨列连线）
+### 6.2 官方集成一览
 
 ```mermaid
 flowchart LR
@@ -264,13 +264,15 @@ flowchart LR
   end
 ```
 
-### 6.3 四 Agent 均无原生 E2E 集成
+### 6.3 无原生 E2E 集成的典型组合
+
+与 [§6.1](#61-agent--主-wire--上游)、[§6.2](#62-官方集成一览) 互补：下列 **Agent × 上游** 在官方集成中 **无** 原生对接，矩阵记 **—**。
 
 ```mermaid
 flowchart TB
-  NA["无官方 E2E 集成（按 Agent × 上游）"]
-  NA --> C["Cohere 自有 API → 四 Agent —"]
-  NA --> X["Codex × 仅 Chat 上游"]
+  NA["矩阵 —：Agent × 上游无官方 E2E 集成"]
+  NA --> C["Cohere 自有 API → 四 Agent 均无"]
+  NA --> X["Codex × 仅 Chat 的上游"]
   NA --> Y["Claude Code × OpenAI / Chat 系"]
   NA --> Z["Gemini CLI × OpenAI / Anthropic / Bedrock"]
   NA --> W["OpenCode × Messages / Responses / Gemini 原生"]
