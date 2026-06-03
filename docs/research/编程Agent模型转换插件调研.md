@@ -1,7 +1,7 @@
 # 编程 Agent 协议转换与网关调研
 
 > **副标题**：Claude Code · Codex · OpenCode 的模型路由与 HTTP 转换方案（含插件边界说明）  
-> **文档类型**：方案地图 · **非** 兼容性认证报告 — 矩阵里的 ✅/◐ 表示 **设计意图或二手信息**；L3–L5 结论以 [reports/](./reports/) 及下文 **证据等级** 为准。  
+> **文档类型**：方案地图 · **非** 兼容性认证报告 — 矩阵里的 ✅/◐ 表示 **设计意图或二手信息**；L3–L5 结论以 [reports/](../reports/) 及下文 **证据等级** 为准。  
 > **范围**：Claude Code、Codex、OpenCode 三类终端编程 Agent  
 > **与 [E2E 原生兼容性全景](./E2E原生兼容性全景.md) 的关系**：全景矩阵描述 **官方集成 × 原厂上游** 的原生对齐；本文描述 **非原生组合** 时，社区/网关如何实现 **协议转换与模型路由**。  
 > **与 [中转站主流技术栈调研](./中转站主流技术栈调研.md) 的关系**：该文描述 **中转站产品如何实现聚合与转发**（Go/Gin、LiteLLM、商业 Token 站）；本文描述 **Agent 侧如何桥接或配置 BASE_URL**。  
@@ -45,7 +45,7 @@
 | 转换方向 | 典型场景 |
 |----------|----------|
 | **Anthropic Messages → OpenAI Chat** | Claude Code 对接 DeepSeek / Ollama / 仅 Chat 的中转站 |
-| **OpenAI Responses → OpenAI Chat** | Codex 0.133+ 对接仅 Chat 的中转站（如 b.ai，见 [Codex 报告](./reports/Codex兼容性评估报告.md)） |
+| **OpenAI Responses → OpenAI Chat** | Codex 0.133+ 对接仅 Chat 的中转站（如 b.ai，见 [Codex 报告](../reports/Codex兼容性评估报告.md)） |
 | **OpenAI Responses → Anthropic Messages** | Codex 经网关调用 Claude（需网关双向转换 + tool 语义对齐） |
 | **OpenAI Chat → OpenAI Responses** | OpenCode 某模型走 `/v1/responses`（OpenCode 内置 AI SDK 选型，非外置插件） |
 | **同协议换模型 ID** | 中转站已支持 Agent 所需端点，仅做模型名映射（**不算** 协议转换，但常与本节方案一起出现） |
@@ -68,7 +68,7 @@
 转换层 E2E（◐/?） = 上述任一 × 自建/第三方网关 × 需实测 L3–L5
 ```
 
-本仓库 [reports/](./reports/) 已验证（**E3**）：**Claude Code + b.ai** 无需转换；**Codex + b.ai** 因缺 `/v1/responses` 必须桥接或换上游；**OpenCode + b.ai** 直连 Chat。转换层方案需在相同 L3–L5 维度复测（流式、tool 多轮、reasoning/thinking）。
+本仓库 [reports/](../reports/) 已验证（**E3**）：**Claude Code + b.ai** 无需转换；**Codex + b.ai** 因缺 `/v1/responses` 必须桥接或换上游；**OpenCode + b.ai** 直连 Chat。转换层方案需在相同 L3–L5 维度复测（流式、tool 多轮、reasoning/thinking）。
 
 ### 1.4 证据等级
 
@@ -162,7 +162,7 @@ export ANTHROPIC_AUTH_TOKEN="sk-..."
 export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1
 ```
 
-**本仓库实测（E3）**：[Claude Code + b.ai](./reports/ClaudeCode兼容性评估报告.md) 为 **同协议直连**（b.ai 原生 Messages），非转换。
+**本仓库实测（E3）**：[Claude Code + b.ai](../reports/ClaudeCode兼容性评估报告.md) 为 **同协议直连**（b.ai 原生 Messages），非转换。
 
 ### 4.2 Claude Code Router（musistudio/claude-code-router）
 
@@ -249,7 +249,7 @@ OpenAI [Discussion #7782](https://github.com/openai/codex/discussions/7782)（**
 | [xiaoshaoning/codex-bridge](https://github.com/xiaoshaoning/codex-bridge) | TypeScript，偏 DeepSeek | 实验性 |
 | [352727664/CodexBridge](https://github.com/352727664/CodexBridge) | Python，多国产模型 | 实验性 |
 
-典型拓扑（与 [Codex 报告 §9 方案 B](./reports/Codex兼容性评估报告.md) 一致）：
+典型拓扑（与 [Codex 报告 §9 方案 B](../reports/Codex兼容性评估报告.md) 一致）：
 
 ```text
 Codex ──POST /v1/responses──▶ 本地 Bridge ──POST /v1/chat/completions──▶ 中转站 / Ollama
@@ -297,7 +297,7 @@ OpenCode 默认通过 **Vercel AI SDK** 调用 **`/v1/chat/completions`**。与 
 | `@ai-sdk/anthropic` | Anthropic Messages | 直连 Anthropic |
 | `@ai-sdk/amazon-bedrock` 等 | 各云原生 SDK | SDK 适配，非统一 HTTP 面 |
 
-示例（**E3**，[OpenCode 报告](./reports/OpenCode兼容性评估报告.md)）：
+示例（**E3**，[OpenCode 报告](../reports/OpenCode兼容性评估报告.md)）：
 
 ```json
 {
@@ -542,10 +542,10 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 - [E2E 原生兼容性全景](./E2E原生兼容性全景.md)
 - [中转站主流技术栈调研](./中转站主流技术栈调研.md)
-- [兼容性评估报告索引](./reports/README.md)
-- [Codex × b.ai 不兼容](./reports/Codex兼容性评估报告.md)
-- [Claude Code × b.ai 基本兼容](./reports/ClaudeCode兼容性评估报告.md)
-- [OpenCode × b.ai 兼容](./reports/OpenCode兼容性评估报告.md)
+- [兼容性评估报告索引](../reports/README.md)
+- [Codex × b.ai 不兼容](../reports/Codex兼容性评估报告.md)
+- [Claude Code × b.ai 基本兼容](../reports/ClaudeCode兼容性评估报告.md)
+- [OpenCode × b.ai 兼容](../reports/OpenCode兼容性评估报告.md)
 
 ---
 

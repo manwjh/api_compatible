@@ -4,29 +4,30 @@
 
 ## 项目定位
 
-**API Compatible** 不是 SDK，而是一套：
+**API Compatible** 是 **研究项目**，主产出在 `docs/`（research / experiment / reports）。**不是** SDK 或中转站产品。
 
-1. **站点注册**（`sites.json` + `.env`）
-2. **Agent 启动器**（`t_claude` / `t_codex` / `t_opencode` → `lib/maas.sh` + `lib/maas.py`）
-3. **兼容性评估报告**（`docs/reports/`，按站点 × Agent 分卷）
+代码从属研究、用于复现：
 
-目标：在接入上游模型源（官方 API 或 Token 中转站）前，判断 Coding Agent 能否端到端跑通。
+1. **验证手段** — `sites.json` + `.env`、`t_*` / `lib/maas.*`、`scripts/*`（用户侧 EC2 Runner 上跑 L2–L5）
+2. **插件原型** — `corpus-tap/`（对应 [中转站语料采集插件设计](./docs/experiment/中转站语料采集插件设计.md)）
+
+目标：在接入上游模型源（官方 API 或 Token 中转站）前，用可复现实验判断 Coding Agent 能否端到端跑通，并把结论写入 `docs/reports/`。
 
 ## 目录职责
 
 | 路径 | 是否提交 Git | 说明 |
 |------|--------------|------|
-| `t_*` | ✅ | 薄入口，逻辑在 `lib/maas.sh` |
+| `t_*` | ✅ | 用户侧 EC2 兼容性自动化入口；逻辑在 `lib/maas.sh` |
+| `scripts/run-user-side-compat.sh` | ✅ | 用户侧 Runner：L2 probe + 可选 `t_*` smoke |
 | `lib/maas.sh`, `lib/maas.py` | ✅ | 共享启动、站点解析、临时配置生成 |
 | `sites.json` | ✅ | 上游站点注册表（无密钥） |
 | `.env.example` | ✅ | 密钥环境变量模板 |
 | `opencode.json.example` | ✅ | OpenCode 手工配置示例（无密钥） |
 | `scripts/pull-upstream.sh` | ✅ | 按需拉取参考源码 |
-| `docs/E2E原生兼容性全景.md` | ✅ | 上游 × 四 Agent 原生 E2E 兼容矩阵（含 Gemini CLI；不含中转站） |
-| `docs/Codex技术架构调研.md` | ✅ | OpenAI Codex harness / CLI / App Server 架构参考（非兼容性认证） |
-| `docs/编程Agent模型转换插件调研.md` | ✅ | 非原生组合的协议转换 / 网关 / 插件边界（方案地图，非 E4 认证） |
-| `docs/中转站主流技术栈调研.md` | ✅ | Token 中转站实现栈与 L2 探测方法（非兼容性认证） |
-| `docs/AWS-EC2隔离实验点设计.md` | ✅ | AWS EC2 + LiteLLM 隔离实验点与出站审计方法论（非兼容性认证） |
+| `corpus-tap/` | ✅ | Corpus Tap 语料采集插件（透明代理骨架，插上 New API 前端） |
+| `docs/README.md` | ✅ | 文档索引（research / experiment / reports） |
+| `docs/research/` | ✅ | 调研与参考（E2E 全景、中转站、协议转换等） |
+| `docs/experiment/` | ✅ | 云上实验点设计（用户侧 Runner、中转站原型） |
 | `codex/` | ❌ | Codex 参考源码，`pull-upstream.sh codex` 拉取 |
 | `docs/reports/` | ✅ | 评估结论与复现步骤（见目录内 README 索引） |
 | `.env` | ❌ | 本地 API Key |
@@ -36,6 +37,8 @@
 | `opencode/`, `newapi/` | ❌ | 上游参考源码，用 `pull-upstream.sh` 拉取 |
 
 ## 启动器约定
+
+**部署位置**：带 N1–N3 的 E4 评估在 **[EC2-用户侧隔离实验点](./docs/experiment/EC2-用户侧隔离实验点设计.md)** 的 Runner 上执行 `./scripts/run-user-side-compat.sh` 与 `./t_*`；[中转站原型](./docs/experiment/EC2-中转站原型实验点设计.md) EC2 **不** 作为 `t_*` 的常规运行环境。
 
 - **`./t_claude`**：Anthropic Messages；缺 CLI 时自动安装；写入 `.claude/settings.json`
 - **`./t_codex`**：OpenAI Responses；缺 CLI 时自动安装；写入 `.runtime/codex.<site>.toml`
@@ -82,10 +85,11 @@
 改目录结构、启动器行为或 Git 规则时，同步更新：
 
 - `README.md`（用户向总览，不含具体测试结论）
-- `docs/E2E原生兼容性全景.md`（改版时同步 **编写日期**、**评估标的版本** 与矩阵内容）
-- `docs/Codex技术架构调研.md`（Codex 大版本或 App Server / wire 变更时复审）
-- `docs/编程Agent模型转换插件调研.md`（网关大版本或 Agent wire 变更时复审）
-- `docs/中转站主流技术栈调研.md`（主流网关大版本或新增站点 E3 时复审）
-- `docs/AWS-EC2隔离实验点设计.md`（实验点拓扑、出站策略或 LiteLLM 三端点要求变更时复审）
+- `docs/research/E2E原生兼容性全景.md`（改版时同步 **编写日期**、**评估标的版本** 与矩阵内容）
+- `docs/research/编程Agent模型转换插件调研.md`（网关大版本或 Agent wire 变更时复审）
+- `docs/research/中转站主流技术栈调研.md`（主流网关大版本或新增站点 E3 时复审）
+- `docs/experiment/EC2-用户侧隔离实验点设计.md`（Runner 拓扑、凭据模式或用户侧出站策略变更时复审）
+- `docs/experiment/EC2-中转站原型实验点设计.md`（New API 原型、Channel/Token 交付或网关侧出站策略变更时复审）
+- `docs/experiment/中转站语料采集插件设计.md`（Corpus Tap 采集规则、存储或插上即用契约变更时复审）
 - `AGENTS.md`（本文件，协作规则）
 - `docs/reports/README.md`（报告索引与样例结论）

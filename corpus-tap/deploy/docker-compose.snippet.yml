@@ -1,0 +1,40 @@
+# Merge into EC2 relay prototype Compose (see docs/experiment/EC2-中转站原型实验点设计.md).
+# User-facing API port becomes corpus-tap:8443.
+
+services:
+  corpus-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: corpus
+      POSTGRES_PASSWORD: corpus
+      POSTGRES_DB: corpus
+    volumes:
+      - corpus-pg-data:/var/lib/postgresql/data
+      - ../migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U corpus -d corpus"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  corpus-tap:
+    build: ..
+    ports:
+      - "8443:8443"
+    environment:
+      CORPUS_TAP_UPSTREAM: http://new-api:3000
+      CORPUS_TAP_DATABASE_URL: postgres://corpus:corpus@corpus-db:5432/corpus?sslmode=disable
+      CORPUS_TAP_LOCAL_DATA_DIR: /data
+      CORPUS_TAP_DEV_USER_ID: "1"
+      CORPUS_TAP_NEWAPI_IMAGE: ${NEWAPI_IMAGE_TAG:-v1.0.0-rc.9}
+    volumes:
+      - corpus-blob-data:/data
+    depends_on:
+      corpus-db:
+        condition: service_healthy
+      new-api:
+        condition: service_started
+
+volumes:
+  corpus-pg-data:
+  corpus-blob-data:
