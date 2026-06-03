@@ -8,7 +8,7 @@
 | **Token 中转站** | 聚合/转售，常裁剪端点 | b.ai、New API、One API、LiteLLM |
 
 本仓库提供：**站点注册 + 启动器 + 评估方法论**，不是 SDK。  
-具体测试结果见 **[docs/reports/](./docs/reports/)**。
+协议参考见 **[docs/E2E原生兼容性全景.md](./docs/E2E原生兼容性全景.md)**；具体测试结果见 **[docs/reports/](./docs/reports/)**。
 
 ---
 
@@ -34,7 +34,9 @@ api_compatible/
 │   ├── pull-upstream.sh           # 按需拉取 opencode / newapi 参考源码
 │   └── probe-endpoints.sh         # 探测站点 HTTP 端点（协议矩阵）
 │
-└── docs/reports/                  # 兼容性评估报告（按站点 × Agent）
+└── docs/
+    ├── E2E原生兼容性全景.md           # 上游 × Agent 原生 E2E 兼容矩阵
+    └── reports/                   # 兼容性评估报告（按站点 × Agent）
 ```
 
 ### 本地生成 / 不提交 Git
@@ -118,6 +120,12 @@ flowchart LR
 
 ---
 
+## 协议参考
+
+各 Agent 硬性依赖与 **E2E 原生兼容性全景** 见 **[docs/E2E原生兼容性全景.md](./docs/E2E原生兼容性全景.md)**。中转站裁剪与实测见 **[docs/reports/](./docs/reports/)**。
+
+---
+
 ## 评估流程
 
 ```mermaid
@@ -138,7 +146,7 @@ flowchart TD
 ## 扩展
 
 **新增 Agent**：仿 `t_*` + `lib/maas.sh` 中 `maas_run_*`，并在 `docs/reports/` 新增报告。  
-**评估云厂商 API**：先映射到上表协议面，再接入 `./t_*`。  
+**评估云厂商 API**：对照 [E2E 原生兼容性全景](./docs/E2E原生兼容性全景.md) 中的官方集成，再接入 `./t_*`。  
 **评估中转站**：额外核对是否裁剪 `/v1/responses`、Base URL 形态、模型 ID。
 
 ---
