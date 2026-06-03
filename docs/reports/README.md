@@ -31,4 +31,4 @@ flowchart TB
 
 ## 新增报告
 
-完成 `./t_*` 探针后，在本目录新增 `站点-Agent兼容性评估报告.md`，并更新上表索引。
+完成 `experiment/user-side/t_*` 探针后，在本目录新增 `站点-Agent兼容性评估报告.md`，并更新上表索引。

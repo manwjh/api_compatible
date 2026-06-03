@@ -349,7 +349,7 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 ### 7.2 New API / One API（中转管理面）
 
-本仓库 `scripts/pull-upstream.sh newapi` 可拉取参考实现。典型能力：
+本仓库 `upstream/pull.sh newapi` 可拉取参考实现到 `upstream/newapi/`。典型能力：
 
 - 聚合多 Key、模型映射、渠道权重  
 - 常暴露 **OpenAI Chat** + **Anthropic Messages**  
@@ -358,10 +358,10 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 #### 用 `probe-endpoints.sh` 解读中转站
 
 ```bash
-./scripts/probe-endpoints.sh <site>
+./experiment/user-side/scripts/probe-endpoints.sh <site>
 ```
 
-脚本（`lib/maas.py probe-endpoints`）对站点 `base_url` 探测四项并给出 **Agent readiness**：
+脚本（`experiment/user-side/lib/maas.py probe-endpoints`）对站点 `base_url` 探测四项并给出 **Agent readiness**：
 
 | 探测 | 通过时含义 | 对应 Agent |
 |------|------------|------------|
@@ -463,7 +463,7 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 ```text
 1. 确定 Agent → 硬性端点（messages / responses / chat）
-2. ./scripts/probe-endpoints.sh <site>
+2. ./experiment/user-side/scripts/probe-endpoints.sh <site>
    ├─ 对应端点 OK → 直连（t_*），写 E3 report
    └─ 否 → 选 L1/L2/L3 网关
 3. PoC 网关 → L3 流式 → L4 tool 多轮 → L5 thinking
@@ -504,12 +504,12 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 ```bash
 # L2 协议探测
-./scripts/probe-endpoints.sh <site>
+./experiment/user-side/scripts/probe-endpoints.sh <site>
 
 # E3/E4 Agent 探针（直连或转换层配置完成后）
-./t_claude --site <site> --model <model> -y
-./t_codex --site <site> --model <model> -y
-./t_opencode --site <site> --model <model> -y
+./experiment/user-side/t_claude --site <site> --model <model> -y
+./experiment/user-side/t_codex --site <site> --model <model> -y
+./experiment/user-side/t_opencode --site <site> --model <model> -y
 ```
 
 通过标准与 [E2E 全景 §1.2](./E2E原生兼容性全景.md#12-图例与评估分层) L3–L5 一致。**转换层至少完成 L4（tool 多轮）再记为 E4 通过。**

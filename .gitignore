@@ -1,13 +1,11 @@
-# Secrets & local runtime
+# OS
+.DS_Store
+
+# Legacy repo-root paths (removed; safe to delete locally if still present)
+opencode/
+newapi/
+codex/
 .env
 .claude/
 .runtime/
 opencode.json
-
-# Optional upstream clones (see scripts/pull-upstream.sh)
-opencode/
-newapi/
-codex/
-
-# OS
-.DS_Store

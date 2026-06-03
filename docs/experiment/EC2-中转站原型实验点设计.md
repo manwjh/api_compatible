@@ -1,7 +1,7 @@
 # EC2 中转站原型实验点设计
 
 > **文档类型**：实验方法论 · **非** 兼容性认证报告（网关侧指标与抽样 probe 可记入 reports；**三 Agent L3–L5 主结论在用户侧 Runner 完成**）  
-> **范围**：境外 AWS EC2 上部署 **投入运营评估用的中转站原型**（基线实现：[New API](https://github.com/QuantumNous/new-api)）：Channel 接 **Anthropic / OpenAI 官方** 与 **同区域 AWS Bedrock**；管理员建 **用户 / Access Token**；将 **平台 Token + API 入口** 交付 [用户侧实验点](./EC2-用户侧隔离实验点设计.md) 作为 `sites.json` 中转源之一  
+> **范围**：境外 AWS EC2 上部署 **投入运营评估用的中转站原型**（基线实现：[New API](https://github.com/QuantumNous/new-api)）：Channel 接 **Anthropic / OpenAI 官方** 与 **同区域 AWS Bedrock**；管理员建 **用户 / Access Token**；将 **平台 Token + API 入口** 交付 [用户侧实验点](./EC2-用户侧隔离实验点设计.md) 作为 `experiment/user-side/sites.json` 中转源之一  
 > **与 [中转站主流技术栈调研](../research/中转站主流技术栈调研.md) 的关系**：该文为产品栈 E1；本文为 **可运营的境外原型机** 搭建与交付规范  
 > **与 [EC2-用户侧隔离实验点设计](./EC2-用户侧隔离实验点设计.md) 的关系**：本文 **不** 承担 Runner 出站审计与三 Agent 主矩阵；用户侧使用本文下发的 Key 完成 E4 与 N1–N3  
 > **可选插件**：[中转站语料采集插件设计](./中转站语料采集插件设计.md)（**Corpus Tap**：简单规则 + 全量收集，按 `user_id` 分区；清洗与微调格式在离线完成）
@@ -57,7 +57,7 @@
 | New API **版本 / digest** | 无法与后续 L4 回归对比 |
 | Channel 与 `model_mapping` 表 | 用户侧 model 名对不上 |
 | 平台 Token 与 Channel Key **分离** | 交付混淆，用户侧 N2 失真 |
-| 对用户暴露的 **base URL**（内网/反代/TLS） | `sites.json` 与 probe 失败 |
+| 对用户暴露的 **base URL**（内网/反代/TLS） | `experiment/user-side/sites.json` 与 probe 失败 |
 
 ---
 
@@ -69,7 +69,7 @@
 |------|----------|
 | Channel 能否稳定转发至 Bedrock / OpenAI / Anthropic？ | New API 日志、管理台渠道测试、可选 curl |
 | 对用户 Token 是否暴露 **三主端点**（Chat / Messages / Responses）？ | 在用户侧 Runner 执行 `probe-endpoints.sh newapi-prototype`（推荐）或网关机 curl |
-| `model_mapping` 是否正确？ | 用户侧 `./t_*` L4 |
+| `model_mapping` 是否正确？ | 用户侧 `experiment/user-side/t_*` L4 |
 
 ### 2.2 中转站侧出站（G1–G2）
 
@@ -134,7 +134,7 @@ corpus-tap ──► corpus-db (PostgreSQL) + S3/MinIO
 
 未启用语料插件时，用户侧可直连 `new-api:3000`（与 [语料插件设计](./中转站语料采集插件设计.md) §3.1 二选一）。
 
-`./scripts/pull-upstream.sh newapi` 拉取参考源码（`.gitignore`）。
+`./upstream/pull.sh newapi` 拉取参考源码到 `upstream/newapi/`（gitignored）。
 
 ---
 
@@ -220,7 +220,7 @@ SG egress、Flow Logs、New API access log（脱敏）。
 |------|------|------|
 | **0** | VPC + EC2 + New API + MySQL + `ch-bedrock` + 1 Token | Channel 通、G1–G2 样例 |
 | **0b** |（可选）+ Corpus Tap + S3 + corpus-db | 单用户 POST 全量入库验收 |
-| **1** | + `ch-openai`、`ch-anthropic`；§10 写入 `sites.json` 草稿 | **交付包**（URL + Token 占位说明） |
+| **1** | + `ch-openai`、`ch-anthropic`；§10 写入 `experiment/user-side/sites.json` 草稿 | **交付包**（URL + Token 占位说明） |
 | **2** | 用户侧 EC2 登记并 probe | P2 四端点记录 |
 | **3** | 用户侧 L4 矩阵 | reports：`newapi-prototype × Agent` |
 | **4** | 高可用 / 分机 / 反代 TLS | 运营加固（可选） |
@@ -246,14 +246,14 @@ SG egress、Flow Logs、New API access log（脱敏）。
 }
 ```
 
-`.env.example`：
+`experiment/user-side/.env.example`：
 
 ```bash
 # Platform token from docs/experiment/EC2-中转站原型实验点设计.md (not upstream provider key)
 # NEWAPI_PROTOTYPE_TOKEN=sk-...
 ```
 
-用户侧流程：[EC2-用户侧隔离实验点设计](./EC2-用户侧隔离实验点设计.md) 模式 B → `./scripts/run-user-side-compat.sh --site newapi-prototype`（或 `probe` + `./t_* -y`）。
+用户侧流程：[EC2-用户侧隔离实验点设计](./EC2-用户侧隔离实验点设计.md) 模式 B → `cd experiment/user-side && ./scripts/run-user-side-compat.sh --site newapi-prototype`（或 `probe` + `./t_* -y`）。
 
 **分机部署**：`base_url` 使用用户侧 SG 可访问的 **内网 IP 或私有域名**，勿写仅本机 `127.0.0.1`（除非用户侧用 SSH 隧道刻意为之，须在报告注明）。
 
@@ -295,7 +295,7 @@ SG egress、Flow Logs、New API access log（脱敏）。
 
 **交付**
 
-- [ ] §10 `sites.json` + `.env.example`  
+- [ ] §10 `experiment/user-side/sites.json` + `experiment/user-side/.env.example`  
 - [ ] 用户侧 SG 可访问 relay host:port  
 - [ ] 通知用户侧执行 probe + L4  
 

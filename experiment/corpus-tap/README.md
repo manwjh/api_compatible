@@ -1,11 +1,11 @@
 # Corpus Tap
 
-New API 中转站 **语料全量采集**插件（透明反向代理）。设计契约见 [docs/experiment/中转站语料采集插件设计.md](../docs/experiment/中转站语料采集插件设计.md)。
+New API 中转站 **语料全量采集**插件（透明反向代理）。属于 [`experiment/`](../README.md) 附件，设计契约见 [中转站语料采集插件设计](../../docs/experiment/中转站语料采集插件设计.md)。
 
 ## 快速开始（本地）
 
 ```bash
-cd corpus-tap
+cd experiment/corpus-tap
 cp .env.example .env
 # 编辑 CORPUS_TAP_UPSTREAM 指向本地或远程 New API
 

@@ -1,6 +1,6 @@
 # 文档索引 — 研究主产出
 
-本目录是 **API Compatible** 的核心交付：`research` 建立判断基线，`experiment` 定义可复现实验，`reports` 归档站点 × Agent 的实证。根目录代码（`t_*`、`scripts/`、`corpus-tap/`）仅用于执行这里的实验设计，见 [根 README § 代码角色](../README.md#代码在仓库中的角色)。
+本目录是 **API Compatible** 的核心交付：`research` 建立判断基线，`experiment` 定义可复现实验，`reports` 归档站点 × Agent 的实证。可复现代码在 [`experiment/`](../experiment/)（与 `docs/experiment/` 对应）与 [`upstream/`](../upstream/)（参考源码），见 [根 README § 代码附件](../README.md#代码附件)。
 
 ---
 
@@ -30,11 +30,11 @@
 1. [中转站主流技术栈调研](./research/中转站主流技术栈调研.md)（选型）  
 2. [New API 技术栈全景](./research/NewAPI技术栈全景.md)（读源码 / 建站前）  
 3. [EC2-中转站原型实验点设计](./experiment/EC2-中转站原型实验点设计.md)（建站、发 Token）  
-4. [EC2-用户侧隔离实验点设计](./experiment/EC2-用户侧隔离实验点设计.md)（`run-user-side-compat.sh` / `t_*`）  
-5. 可选语料：[中转站语料采集插件设计](./experiment/中转站语料采集插件设计.md) + [corpus-tap/](../corpus-tap/)  
+4. [EC2-用户侧隔离实验点设计](./experiment/EC2-用户侧隔离实验点设计.md)（`experiment/user-side/`）  
+5. 可选语料：[中转站语料采集插件设计](./experiment/中转站语料采集插件设计.md) + [experiment/corpus-tap/](../experiment/corpus-tap/)  
 6. 结论写入 [reports/](./reports/)
 
-路径 B 的变量控制与 Runner 分工以 experiment 文档为准；**不在**中转站原型 EC2 上常规跑 `t_*`。
+路径 B 的变量控制与 Runner 分工以 experiment 文档为准；**不在**中转站原型 EC2 上常规跑 `experiment/user-side/t_*`。
 
 ---
 
@@ -49,14 +49,15 @@
 
 ---
 
-## experiment/
+## experiment/（设计稿 ↔ 代码）
 
-| 文档 / 代码 | 说明 |
-|-------------|------|
-| [EC2-用户侧隔离实验点设计.md](./experiment/EC2-用户侧隔离实验点设计.md) | Runner + `t_*` + 出站审计；原厂或中转站 Token |
-| [EC2-中转站原型实验点设计.md](./experiment/EC2-中转站原型实验点设计.md) | New API 运营原型；Token 交付用户侧 |
-| [中转站语料采集插件设计.md](./experiment/中转站语料采集插件设计.md) | Corpus Tap：规则 + 全量采集（插上即用契约） |
-| [corpus-tap/](../corpus-tap/) | 插件设计原型（Go 代理 + PG 迁移 + Compose 片段） |
+| 设计文档 | 代码目录 |
+|----------|----------|
+| [EC2-用户侧隔离实验点设计.md](./experiment/EC2-用户侧隔离实验点设计.md) | [experiment/user-side/](../experiment/user-side/) |
+| [EC2-中转站原型实验点设计.md](./experiment/EC2-中转站原型实验点设计.md) | [experiment/gateway-prototype/](../experiment/gateway-prototype/) |
+| [中转站语料采集插件设计.md](./experiment/中转站语料采集插件设计.md) | [experiment/corpus-tap/](../experiment/corpus-tap/) |
+
+索引：[experiment/README.md](../experiment/README.md)
 
 ---
 
@@ -73,8 +74,9 @@
 
 | 位置 | 内容 |
 |------|------|
-| [../README.md](../README.md) | 研究问题、方法概要、代码从属角色、复现验证入口 |
+| [../README.md](../README.md) | 研究问题、方法概要、代码附件角色、复现验证入口 |
 | `docs/`（本页） | 全部研究文档的导航与阅读顺序 |
-| `t_*`、`scripts/` | 执行 experiment / reports 中的步骤，非独立产品 |
+| [`experiment/`](../experiment/) | 执行 experiment 设计稿的可复现实现 |
+| [`upstream/`](../upstream/) | research 用参考源码 clone（不参与 Runner 运行） |
 
 根目录 [README](../README.md) 不含具体测试结论；结论只在 [reports/](./reports/)。

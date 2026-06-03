@@ -53,7 +53,7 @@
 | 安装方式 | `npm install -g opencode-ai@latest` | ✅ |
 | CLI 路径 | `/opt/homebrew/bin/opencode` | ✅ |
 | CLI 版本 | `1.15.13` | ✅ 最新稳定版 |
-| 源码仓库 | `./opencode/`（GitHub clone，供参考） | ✅ |
+| 源码仓库 | `upstream/opencode/`（`upstream/pull.sh opencode`，供参考） | ✅ |
 | 数据目录 | `~/.local/share/opencode` | ✅ |
 | 配置目录 | `~/.config/opencode` | ✅ |
 

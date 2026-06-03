@@ -6,10 +6,10 @@
 
 **API Compatible** 是 **研究项目**，主产出在 `docs/`（research / experiment / reports）。**不是** SDK 或中转站产品。
 
-代码从属研究、用于复现：
-
-1. **验证手段** — `sites.json` + `.env`、`t_*` / `lib/maas.*`、`scripts/*`（用户侧 EC2 Runner 上跑 L2–L5）
-2. **插件原型** — `corpus-tap/`（对应 [中转站语料采集插件设计](./docs/experiment/中转站语料采集插件设计.md)）
+| 附件 | 路径 | 作用 |
+|------|------|------|
+| **实验实现** | [`experiment/`](./experiment/) | 与 [`docs/experiment/`](./docs/experiment/) 一一对应（见 [experiment/README.md](./experiment/README.md)） |
+| **参考源码** | [`upstream/`](./upstream/) | `pull.sh` 拉取 OpenCode / New API / Codex 对照实现（gitignored） |
 
 目标：在接入上游模型源（官方 API 或 Token 中转站）前，用可复现实验判断 Coding Agent 能否端到端跑通，并把结论写入 `docs/reports/`。
 
@@ -17,79 +17,45 @@
 
 | 路径 | 是否提交 Git | 说明 |
 |------|--------------|------|
-| `t_*` | ✅ | 用户侧 EC2 兼容性自动化入口；逻辑在 `lib/maas.sh` |
-| `scripts/run-user-side-compat.sh` | ✅ | 用户侧 Runner：L2 probe + 可选 `t_*` smoke |
-| `lib/maas.sh`, `lib/maas.py` | ✅ | 共享启动、站点解析、临时配置生成 |
-| `sites.json` | ✅ | 上游站点注册表（无密钥） |
-| `.env.example` | ✅ | 密钥环境变量模板 |
-| `opencode.json.example` | ✅ | OpenCode 手工配置示例（无密钥） |
-| `scripts/pull-upstream.sh` | ✅ | 按需拉取参考源码 |
-| `corpus-tap/` | ✅ | Corpus Tap 语料采集插件（透明代理骨架，插上 New API 前端） |
-| `docs/README.md` | ✅ | 文档索引（research / experiment / reports） |
-| `docs/research/` | ✅ | 调研与参考（E2E 全景、中转站、协议转换等） |
-| `docs/experiment/` | ✅ | 云上实验点设计（用户侧 Runner、中转站原型） |
-| `codex/` | ❌ | Codex 参考源码，`pull-upstream.sh codex` 拉取 |
-| `docs/reports/` | ✅ | 评估结论与复现步骤（见目录内 README 索引） |
-| `.env` | ❌ | 本地 API Key |
-| `.claude/` | ❌ | Claude Code 本地配置（含密钥） |
-| `.runtime/` | ❌ | 启动器生成的临时 Agent 配置 |
-| `opencode.json` | ❌ | 本地 OpenCode 配置（若含密钥） |
-| `opencode/`, `newapi/` | ❌ | 上游参考源码，用 `pull-upstream.sh` 拉取 |
-
-## 启动器约定
-
-**部署位置**：带 N1–N3 的 E4 评估在 **[EC2-用户侧隔离实验点](./docs/experiment/EC2-用户侧隔离实验点设计.md)** 的 Runner 上执行 `./scripts/run-user-side-compat.sh` 与 `./t_*`；[中转站原型](./docs/experiment/EC2-中转站原型实验点设计.md) EC2 **不** 作为 `t_*` 的常规运行环境。
-
-- **`./t_claude`**：Anthropic Messages；缺 CLI 时自动安装；写入 `.claude/settings.json`
-- **`./t_codex`**：OpenAI Responses；缺 CLI 时自动安装；写入 `.runtime/codex.<site>.toml`
-- **`./t_opencode`**：Chat Completions；缺 CLI 时自动安装；写入 `.runtime/opencode.<site>.json`
-
-三者共用参数：`--site`、`--model`、`-y`、`--list-sites`、`--list-models`；其余参数透传给底层 CLI。
-
-**不要**让启动器依赖仓库内的 `opencode/` 或 `newapi/` 源码目录。
-
-## 新增上游站点
-
-1. 在 `sites.json` → `sites` 增加条目（`base_url`、`anthropic_base_url`、`api_key_env`、`default_models`、可选 `opencode` 块）
-2. 在 `.env.example` 增加对应 `*_API_KEY` 占位
-3. 用户本地 `.env` 填真实 Key
-4. 用 `./t_*` 跑通后，在 `docs/reports/` 新增或更新评估报告
-
-## 新增 Agent 启动器
-
-1. 新增 `t_<name>`（source `lib/maas.sh`，调用 `maas_run_<name>`）
-2. 在 `maas.sh` 实现：参数解析、CLI 检测/安装、环境变量与临时配置、`exec` 启动
-3. 在 `maas.py` 按需增加 `get` / `write-*-config` 子命令
-4. 在 `docs/reports/` 新增 `*兼容性评估报告.md`
-
-## 安全与 Git
-
-- **禁止**提交 API Key、`.env`、`.claude/`、`.runtime/`、含密钥的 `opencode.json`
-- `sites.json` 只引用 `api_key_env` 名称，不写密钥值
-- 评估报告中的 Key 应打码或提示轮换
+| `docs/` | ✅ | **主产出**：research / experiment / reports |
+| `experiment/user-side/` | ✅ | [EC2-用户侧隔离实验点](./docs/experiment/EC2-用户侧隔离实验点设计.md) — 细则见 [AGENTS.md](./experiment/user-side/AGENTS.md) |
+| `experiment/gateway-prototype/` | ✅ | [EC2-中转站原型实验点](./docs/experiment/EC2-中转站原型实验点设计.md) — 占位，待补 Compose/脚本 |
+| `experiment/corpus-tap/` | ✅ | [中转站语料采集插件设计](./docs/experiment/中转站语料采集插件设计.md) |
+| `upstream/pull.sh`, `upstream/README.md` | ✅ | 按需拉取参考源码到 `upstream/*/` |
+| `upstream/opencode/`, `upstream/newapi/`, `upstream/codex/` | ❌ | 参考源码 clone |
+| 根目录 `.env`、`.claude/`、`.runtime/` | ❌ | **已迁至 `experiment/user-side/`**；根目录残留可删除 |
 
 ## 参考源码
 
 需要对照 OpenCode / New API / Codex 实现时：
 
 ```bash
-./scripts/pull-upstream.sh opencode
-./scripts/pull-upstream.sh newapi
-./scripts/pull-upstream.sh codex
+./upstream/pull.sh opencode
+./upstream/pull.sh newapi
+./upstream/pull.sh codex
 ```
 
-拉取目录已在 `.gitignore`，勿加入版本库。
+拉取目录在 `upstream/.gitignore`，勿加入版本库。
+
+## 安全与 Git
+
+- **禁止**提交 API Key、`.env`、`.claude/`、`.runtime/`、含密钥的 `opencode.json`
+- `experiment/user-side/sites.json` 只引用 `api_key_env` 名称，不写密钥值
+- 评估报告中的 Key 应打码或提示轮换
 
 ## 文档同步
 
-改目录结构、启动器行为或 Git 规则时，同步更新：
+改目录结构、实验设计或 Git 规则时，同步更新：
 
-- `README.md`（用户向总览，不含具体测试结论）
-- `docs/research/E2E原生兼容性全景.md`（改版时同步 **编写日期**、**评估标的版本** 与矩阵内容）
-- `docs/research/编程Agent模型转换插件调研.md`（网关大版本或 Agent wire 变更时复审）
-- `docs/research/中转站主流技术栈调研.md`（主流网关大版本或新增站点 E3 时复审）
-- `docs/experiment/EC2-用户侧隔离实验点设计.md`（Runner 拓扑、凭据模式或用户侧出站策略变更时复审）
-- `docs/experiment/EC2-中转站原型实验点设计.md`（New API 原型、Channel/Token 交付或网关侧出站策略变更时复审）
-- `docs/experiment/中转站语料采集插件设计.md`（Corpus Tap 采集规则、存储或插上即用契约变更时复审）
-- `AGENTS.md`（本文件，协作规则）
-- `docs/reports/README.md`（报告索引与样例结论）
+- [README.md](./README.md)（用户向总览，不含具体测试结论）
+- [docs/README.md](./docs/README.md)（文档索引）
+- [experiment/README.md](./experiment/README.md)（实验实现 ↔ 设计稿映射）
+- [upstream/README.md](./upstream/README.md)（参考源码拉取说明）
+- [docs/research/E2E原生兼容性全景.md](./docs/research/E2E原生兼容性全景.md)（改版时同步 **编写日期**、**评估标的版本** 与矩阵内容）
+- [docs/research/编程Agent模型转换插件调研.md](./docs/research/编程Agent模型转换插件调研.md)（网关大版本或 Agent wire 变更时复审）
+- [docs/research/中转站主流技术栈调研.md](./docs/research/中转站主流技术栈调研.md)（主流网关大版本或新增站点 E3 时复审）
+- [docs/experiment/EC2-用户侧隔离实验点设计.md](./docs/experiment/EC2-用户侧隔离实验点设计.md)（Runner 拓扑、凭据模式或用户侧出站策略变更时复审）
+- [docs/experiment/EC2-中转站原型实验点设计.md](./docs/experiment/EC2-中转站原型实验点设计.md)（New API 原型、Channel/Token 交付或网关侧出站策略变更时复审）
+- [docs/experiment/中转站语料采集插件设计.md](./docs/experiment/中转站语料采集插件设计.md)（Corpus Tap 采集规则、存储或插上即用契约变更时复审）
+- [experiment/user-side/AGENTS.md](./experiment/user-side/AGENTS.md)（启动器或站点登记变更时）
+- [docs/reports/README.md](./docs/reports/README.md)（报告索引与样例结论）

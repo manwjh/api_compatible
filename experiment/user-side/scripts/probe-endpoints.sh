@@ -7,7 +7,7 @@ SITE="${1:-}"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   cat <<'EOF'
-Usage: scripts/probe-endpoints.sh [SITE]
+Usage: experiment/user-side/scripts/probe-endpoints.sh [SITE]
 
 Probe GET /v1/models and POST on chat/completions, messages, responses.
 SITE defaults to sites.json → default_site.

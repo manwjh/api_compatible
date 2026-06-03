@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Shared helpers for Agent launchers: t_claude, t_codex, t_opencode.
-# See AGENTS.md for directory layout and contribution rules.
+# See experiment/user-side/AGENTS.md for directory layout and contribution rules.
 
 set -euo pipefail
 

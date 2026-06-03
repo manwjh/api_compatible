@@ -2,9 +2,9 @@
 
 > **文档类型**：实验方法论 · **非** 兼容性认证报告（实测结论写入 [reports/](../reports/)）  
 > **范围**：境外（或隔离）**EC2 Runner** 上模拟 **终端开发者** 行为：安装三 Agent、配置凭据、跑 L2–L5，并做 **出站审计（N1–N3）**  
-> **凭据模式**：**原厂 Key 直连** 或 **中转站平台 Token**（含 [中转站原型实验点](./EC2-中转站原型实验点设计.md) 下发的 Key、b.ai 等 `sites.json` 站点）  
+> **凭据模式**：**原厂 Key 直连** 或 **中转站平台 Token**（含 [中转站原型实验点](./EC2-中转站原型实验点设计.md) 下发的 Key、b.ai 等 `experiment/user-side/sites.json` 站点）  
 > **与 [E2E 原生兼容性全景](../research/E2E原生兼容性全景.md) 的关系**：直连原厂模式对齐全景 **L1+L2+**；中转站模式为 **经网关的 E4**  
-> **与 [EC2-中转站原型实验点设计](./EC2-中转站原型实验点设计.md) 的关系**：中转站稿定义 **运营商侧 New API**；本文定义 **用户侧如何接入**；原型站点的 `base_url` + 平台 Token 登记到 `sites.json` 后在本实验点使用
+> **与 [EC2-中转站原型实验点设计](./EC2-中转站原型实验点设计.md) 的关系**：中转站稿定义 **运营商侧 New API**；本文定义 **用户侧如何接入**；原型站点的 `base_url` + 平台 Token 登记到 `experiment/user-side/sites.json` 后在本实验点使用
 
 ### 文档元信息
 
@@ -52,7 +52,7 @@
         │
         │  交付：base_url、anthropic_base_url、Access Token、对外 model 名
         ▼
-[ 用户侧 EC2 ]      clone 本仓库 → sites.json + .env → probe + ./t_*（自动化，§8）
+[ 用户侧 EC2 ]      clone 本仓库 → cd experiment/user-side → sites.json + .env → probe + ./t_*（自动化，§8）
 ```
 
 商业站（如 **b.ai**）无需自建原型，也可直接在用户侧 EC2 上作为「中转站源」登记测试。
@@ -62,7 +62,7 @@
 | 固定项 | 否则会出现 |
 |--------|------------|
 | **当前模式**（直连 / 中转） | 出站白名单与结论 scope 混乱 |
-| **sites.json 站点 id** | 报告无法复现 |
+| **sites.json 站点 id**（`experiment/user-side/` 下） | 报告无法复现 |
 | **Agent 版本与禁用项** | OAuth、`doctor` 污染 N2/N3 |
 | **通过 / 失败判定** | 无法写入 [reports/](../reports/) |
 
@@ -106,7 +106,7 @@
 │  │         ├── 模式 A：原厂 Key ──────────► api.* / Bedrock│  │
 │  │         │                                              │  │
 │  │         └── 模式 B：平台 Token ────────► 中转站 URL     │  │
-│  │                      （原型 / b.ai / 其他 sites.json） │  │
+│  │                      （原型 / b.ai / 其他 sites.json 站点） │  │
 │  └───────────────────────────────────────────────────────┘  │
 │  SG：按 §7 按模式切换白名单                                  │
 └─────────────────────────────────────────────────────────────┘
@@ -124,7 +124,7 @@
 |----|------|
 | **凭据** | `ANTHROPIC_API_KEY`、`OPENAI_API_KEY`；Bedrock 用 Instance Profile 或专用 Key（**仅** 当测试 Claude/Codex 官方 Bedrock 集成时） |
 | **BASE_URL** | 默认官方；或不设置 `*_BASE_URL` |
-| **sites.json** | 可增 `official-openai` 等条目便于 `probe`；或手写 env |
+| **`experiment/user-side/sites.json`** | 可增 `official-openai` 等条目便于 `probe`；或手写 env |
 | **用途** | Positive control、与 E2E 全景对照、排除 Runner/SG 误伤 |
 
 ### 4.2 模式 B：中转站
@@ -133,7 +133,7 @@
 |----|------|
 | **凭据** | 中转站下发的 **平台 Access Token**（非 Channel 上游 Key） |
 | **BASE_URL** | 站点 `base_url` / `anthropic_base_url`（来自 [中转站原型](./EC2-中转站原型实验点设计.md) §9 或商业站文档） |
-| **sites.json** | 例：`newapi-prototype`、`b.ai` |
+| **`experiment/user-side/sites.json`** | 例：`newapi-prototype`、`b.ai` |
 | **model** | 使用中转站对外映射名（如 `claude-exp-bedrock`） |
 | **禁止** | Claude 内置 Bedrock、Codex `amazon-bedrock` provider（绕过中转 URL） |
 
@@ -218,7 +218,7 @@ Codex OAuth、`codex doctor`（主路径）、CLI 自动更新、未用 MCP / Op
 
 ### 8.1 定位
 
-本仓库 **`t_claude`、`t_codex`、`t_opencode`** 的设计落点即 **用户侧 EC2 Runner** 上的 **兼容性自动化入口**（非中转站原型机上的常驻服务）：
+本仓库 **`experiment/user-side/t_claude`、`t_codex`、`t_opencode`** 的设计落点即 **用户侧 EC2 Runner** 上的 **兼容性自动化入口**（非中转站原型机上的常驻服务）。以下命令均在 **`experiment/user-side/` 目录** 下执行：
 
 | 组件 | 作用 |
 |------|------|
@@ -227,13 +227,13 @@ Codex OAuth、`codex doctor`（主路径）、CLI 自动更新、未用 MCP / Op
 | `./t_<agent>` | 解析站点 → 写临时配置 → 调用底层 CLI（**L3–L5**） |
 | `scripts/run-user-side-compat.sh` | Runner 上一键：**probe + 可选 smoke**（§8.3） |
 
-开发者在 **本机** 也可运行同一套 `t_*` 做快速调试，但 **带 N1–N3 的 E4 认证** 应在用户侧 EC2 上复跑；报告须写明 Runner 环境。
+开发者在 **本机** 也可 `cd experiment/user-side` 运行同一套 `t_*` 做快速调试，但 **带 N1–N3 的 E4 认证** 应在用户侧 EC2 上复跑；报告须写明 Runner 环境。
 
 ### 8.2 Runner 部署约定
 
 ```bash
 # 示例：用户侧 EC2
-git clone <api_compatible> && cd api_compatible
+git clone <api_compatible> && cd api_compatible/experiment/user-side
 cp .env.example .env    # 由 SSM 注入 Key / 平台 Token
 # 预装 Node（OpenCode）、可选禁止实验期 npm 全局升级
 
@@ -243,10 +243,10 @@ cp .env.example .env    # 由 SSM 注入 Key / 平台 Token
 
 | 项 | 建议 |
 |----|------|
-| **仓库路径** | 固定如 `/opt/api_compatible`（SSM 下发 `.env` 不进 Git） |
+| **仓库路径** | 固定如 `/opt/api_compatible/experiment/user-side`（SSM 下发 `.env` 不进 Git） |
 | **代理** | 境外 Runner 通常 `MAAS_PROXY_SKIP=1`；大陆调试机再用 `MAAS_PROXY` |
 | **非交互** | 自动化必须带 **`-y`**，并透过 `--` 传入 CLI 非交互子命令（§8.3） |
-| **产物** | `.claude/settings.json`、`.runtime/codex.*`、`.runtime/opencode.*` 仅在 Runner 本地 |
+| **产物** | `experiment/user-side/.claude/settings.json`、`.runtime/codex.*`、`.runtime/opencode.*` 仅在 Runner 本地 |
 
 ### 8.3 自动化分层
 
@@ -269,14 +269,14 @@ cp .env.example .env    # 由 SSM 注入 Key / 平台 Token
 ### 8.4 与中转站原型的接口
 
 1. 原型机交付 URL + 平台 Token（[中转站原型 §9](./EC2-中转站原型实验点设计.md#9-交付用户侧sitesjson)）。  
-2. 维护者合并 `sites.json` 条目 `newapi-prototype`。  
+2. 维护者合并 `experiment/user-side/sites.json` 条目 `newapi-prototype`。  
 3. 用户侧 EC2 执行 §8.2 → 结论写入 `docs/reports/`。
 
 ---
 
 ## 9. 三 Agent 配置要点
 
-统一流程：在 `sites.json` 登记站点 → `.env` 填 `api_key_env` → `./t_* --site <id> -y`（自动化）或交互调试时不加 `-y`。
+统一流程：在 `experiment/user-side/sites.json` 登记站点 → `experiment/user-side/.env` 填 `api_key_env` → `cd experiment/user-side` 后 `./t_* --site <id> -y`（自动化）或交互调试时不加 `-y`。
 
 ### 9.1 模式 B 示例（中转站原型）
 
@@ -305,7 +305,7 @@ export ANTHROPIC_API_KEY="<anthropic-official-key>"
 |------|------|------|
 | **0** | Runner EC2 + SG + 预装 CLI；模式 A 单 Agent probe + N1–N2 | 直连基线 |
 | **1** | 模式 A Claude L4；可选 Positive 已含在 A | `reports/` 直连样例 |
-| **2** | 中转站原型交付 Token；`sites.json` 登记；模式 B probe + N2 | 验证仅连中转 host |
+| **2** | 中转站原型交付 Token；`experiment/user-side/sites.json` 登记；模式 B probe + N2 | 验证仅连中转 host |
 | **3** | 模式 B 三 Agent L4（按 probe 结果裁剪 Codex） | `newapi-prototype × Agent` 报告 |
 | **4** | 增加 b.ai 或其他商业站为第二中转源 | 多站点对比 |
 
@@ -341,7 +341,7 @@ export ANTHROPIC_API_KEY="<anthropic-official-key>"
 |------|------|
 | 模式混用 | Agent env 残留导致 N2 假违规/假通过 |
 | 中转站不可达 | 模式 B 失败需先查原型 EC2 / SG，勿误判 Agent |
-| 本机 vs EC2 | 本机 `./t_*` 不能替代 N1–N3；EC2 结论不自动适用于开发者笔记本 |
+| 本机 vs EC2 | 本机 `experiment/user-side/t_*` 不能替代 N1–N3；EC2 结论不自动适用于开发者笔记本 |
 | 商业站裁剪 | b.ai 缺 Responses 与原型全功能不同，须分站点写 scope |
 
 ---
@@ -369,7 +369,7 @@ export ANTHROPIC_API_KEY="<anthropic-official-key>"
 **模式 B**
 
 - [ ] [中转站原型](./EC2-中转站原型实验点设计.md) 已交付 Token 与 URL  
-- [ ] `sites.json` + `.env` 登记  
+- [ ] `experiment/user-side/sites.json` + `experiment/user-side/.env` 登记  
 - [ ] probe 四条端点归档  
 - [ ] N2 仅连中转 host + L4 + N3  
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Clone/update optional upstream reference trees (gitignored). See AGENTS.md.
+# Clone/update optional upstream reference trees (gitignored). See upstream/README.md.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 pull_repo() {
@@ -28,10 +28,10 @@ pull_repo() {
 
 usage() {
   cat <<'EOF'
-Usage: scripts/pull-upstream.sh [opencode|newapi|codex|all]
+Usage: upstream/pull.sh [opencode|newapi|codex|all]
 
-Pull optional upstream reference code into the project root.
-These directories are gitignored and not needed to run ./t_claude / t_codex / t_opencode.
+Pull optional upstream reference code into upstream/ (gitignored).
+Not needed to run experiment/user-side/t_* launchers.
 
   opencode   anomalyco/opencode (branch dev)
   newapi     QuantumNous/new-api (branch main)

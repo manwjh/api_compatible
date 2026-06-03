@@ -11,9 +11,10 @@ AGENTS=(claude codex opencode)
 
 usage() {
   cat <<'EOF'
-Usage: scripts/run-user-side-compat.sh --site SITE [options]
+Usage: experiment/user-side/scripts/run-user-side-compat.sh --site SITE [options]
 
 Run on the user-side EC2 Runner (see docs/experiment/EC2-用户侧隔离实验点设计.md).
+Work from the experiment/user-side/ directory (or use experiment/user-side/ prefix from repo root).
 
 Options:
   --site ID       Required. sites.json site id (e.g. b.ai, newapi-prototype)
