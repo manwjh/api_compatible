@@ -1,0 +1,109 @@
+{
+  "description": "Per-site test plan: Layer 2 probe matrix + Layer 3 Agent/LiteLLM models + smoke scenarios. Does not describe site URLs — see sites.json.",
+  "protocol_profiles": {
+    "anthropic": "OpenCode + Claude Code → chat, messages",
+    "openai": "OpenCode + Codex → chat, responses",
+    "chat": "OpenCode only → chat"
+  },
+  "wire_labels": {
+    "chat": "POST /v1/chat/completions (OpenCode)",
+    "messages": "POST /v1/messages (Claude Code)",
+    "responses": "POST /v1/responses (Codex)"
+  },
+  "smoke_mode": "relay",
+  "smoke_timeout_sec": 180,
+  "smoke_scenarios": [
+    {
+      "id": "model_probe",
+      "tags": ["anti-speculation", "identity"],
+      "required": true,
+      "model_probe": true,
+      "prompt": "Respond with ONLY one JSON object — no markdown fences, no extra text. Required keys: \"model\" (your exact model identifier as you know it), \"release_date\" (ISO-8601 date when you were released, or \"unknown\"), \"knowledge_cutoff\" (your knowledge cutoff date, or \"unknown\"). Be factual about your identity; do not claim to be a different model.",
+      "expect_json_keys": ["model", "release_date"],
+      "expect_model_match": true
+    },
+    {
+      "id": "explain",
+      "tags": ["generation"],
+      "required": true,
+      "prompt": "Explain what an API gateway does in two short sentences.",
+      "min_output_chars": 40
+    },
+    {
+      "id": "structured",
+      "tags": ["format"],
+      "required": true,
+      "prompt": "Reply with only one line of valid JSON: {\"status\":\"ok\"}",
+      "expect_json_key": "status",
+      "expect_json_value": "ok"
+    },
+    {
+      "id": "code",
+      "tags": ["code"],
+      "required": true,
+      "prompt": "Write a Python function named add that takes a and b. Output only the code block.",
+      "expect_contains": "def add"
+    },
+    {
+      "id": "tool",
+      "tags": ["tool"],
+      "required": false,
+      "agent_only": true,
+      "agents": {
+        "opencode": {
+          "prompt": "List the file names in the current directory only, one per line. Do not use markdown."
+        },
+        "codex": {
+          "argv": [
+            "exec",
+            "Create /tmp/maas-smoke.txt containing TOOL_OK, then print TOOL_OK"
+          ]
+        },
+        "claude": {
+          "prompt": "Read CONFIG.md in the current directory and reply with its first markdown heading text only."
+        }
+      }
+    }
+  ],
+  "sites": {
+    "b.ai": {
+      "layer2": {
+        "targets": [
+          {"model": "kimi-k2.5", "wires": ["chat"]},
+          {"model": "claude-haiku-4.5", "wires": ["messages"]}
+        ]
+      },
+      "layer3": {
+        "models": {
+          "claude": "claude-haiku-4.5",
+          "codex": "gpt-5-mini",
+          "opencode": "kimi-k2.5"
+        },
+        "opencode": {
+          "provider_id": "bai",
+          "provider_name": "b.ai",
+          "npm": "@ai-sdk/openai-compatible"
+        }
+      }
+    },
+    "ai.oai.red": {
+      "layer2": {
+        "targets": [
+          {"model": "gpt-5.5", "wires": ["chat", "responses"]}
+        ]
+      },
+      "layer3": {
+        "models": {
+          "claude": "claude-haiku-4.5",
+          "codex": "gpt-5.5",
+          "opencode": "gpt-5.5"
+        },
+        "opencode": {
+          "provider_id": "oai-red",
+          "provider_name": "ai.oai.red",
+          "npm": "@ai-sdk/openai-compatible"
+        }
+      }
+    }
+  }
+}

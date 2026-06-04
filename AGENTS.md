@@ -8,10 +8,10 @@
 
 | 附件 | 路径 | 作用 |
 |------|------|------|
-| **实验实现** | [`experiment/`](./experiment/) | 与 [`docs/experiment/`](./docs/experiment/) 一一对应（见 [experiment/README.md](./experiment/README.md)） |
+| **实验实现** | [`experiment/`](./experiment/) | 与 [`docs/experiment/`](./docs/experiment/) 一一对应；user-side 配置见 [`experiment/user-side/CONFIG.md`](./experiment/user-side/CONFIG.md) |
 | **参考源码** | [`upstream/`](./upstream/) | `pull.sh` 拉取 OpenCode / New API / Codex 对照实现（gitignored） |
 
-目标：在接入上游模型源（官方 API 或 Token 中转站）前，用可复现实验判断 Coding Agent 能否端到端跑通，并把结论写入 `docs/reports/`。
+目标：在接入上游模型源前，用 **源 → LiteLLM → 指定 Agent** 可复现实验判断端到端是否跑通，并把结论写入 `docs/reports/`。测试端点见 [EC2-用户侧隔离实验点 §2.3](./docs/experiment/EC2-用户侧隔离实验点设计.md#23-测试端点源--litellm--agent)。
 
 ## 目录职责
 
@@ -56,6 +56,7 @@
 - [docs/research/中转站主流技术栈调研.md](./docs/research/中转站主流技术栈调研.md)（主流网关大版本或新增站点 E3 时复审）
 - [docs/experiment/EC2-用户侧隔离实验点设计.md](./docs/experiment/EC2-用户侧隔离实验点设计.md)（Runner 拓扑、凭据模式或用户侧出站策略变更时复审）
 - [docs/experiment/EC2-中转站原型实验点设计.md](./docs/experiment/EC2-中转站原型实验点设计.md)（New API 原型、Channel/Token 交付或网关侧出站策略变更时复审）
-- [docs/experiment/中转站语料采集插件设计.md](./docs/experiment/中转站语料采集插件设计.md)（Corpus Tap 采集规则、存储或插上即用契约变更时复审）
+- [docs/experiment/中转站语料采集插件设计.md](./docs/experiment/中转站语料采集插件设计.md)（Corpus Tap 采集规则、存储、插上即用契约或 **Profile Analyzer 独立 LLM 契约** 变更时复审）
 - [experiment/user-side/AGENTS.md](./experiment/user-side/AGENTS.md)（启动器或站点登记变更时）
+- [experiment/user-side/CONFIG.md](./experiment/user-side/CONFIG.md)（sites / assess-plan 分工变更时）
 - [docs/reports/README.md](./docs/reports/README.md)（报告索引与样例结论）

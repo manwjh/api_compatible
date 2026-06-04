@@ -4,7 +4,7 @@
 
 | 设计文档 | 代码目录 | 状态 |
 |----------|----------|------|
-| [EC2-用户侧隔离实验点设计](../docs/experiment/EC2-用户侧隔离实验点设计.md) | [user-side/](./user-side/) | `t_*`、L2 probe、smoke |
+| [EC2-用户侧隔离实验点设计](../docs/experiment/EC2-用户侧隔离实验点设计.md) | [user-side/](./user-side/) | 源 → LiteLLM → `t_*` 测试端点 |
 | [EC2-中转站原型实验点设计](../docs/experiment/EC2-中转站原型实验点设计.md) | [gateway-prototype/](./gateway-prototype/) | 占位（Compose / Channel 脚本待实施） |
 | [中转站语料采集插件设计](../docs/experiment/中转站语料采集插件设计.md) | [corpus-tap/](./corpus-tap/) | Go 透明代理骨架 |
 
@@ -13,10 +13,10 @@
 ## 快速入口
 
 ```bash
-# 用户侧 L2–L5
+# 标准：源 → LiteLLM → Agent
 cd experiment/user-side
 cp .env.example .env
-./t_claude --site b.ai -y
+./scripts/run-source-agent-test.sh --site <site-id> --agent claude --smoke
 
 # 语料采集（插在中转站 New API 前端）
 cd experiment/corpus-tap

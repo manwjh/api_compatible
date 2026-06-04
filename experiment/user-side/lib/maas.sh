@@ -58,6 +58,8 @@ Launcher options:
   --list-models      List models from GET /v1/models (--site optional)
   -h, --help         Show this help
 
+Agent traffic always goes through LiteLLM (see scripts/litellm-proxy.sh).
+
 Remaining arguments are passed to the underlying CLI.
 EOF
 }
@@ -271,18 +273,38 @@ maas_ensure_codex() {
   exit 1
 }
 
+maas_write_agent_config() {
+  local kind="$1"
+  local out="$2"
+  local cmd=(write-"${kind}"-config --site "$MAAS_SITE" --out "$out")
+  if [[ -n "${MAAS_MODEL:-}" ]]; then
+    cmd+=(--model "$MAAS_MODEL")
+  fi
+  maas_py "${cmd[@]}"
+}
+
+maas_ensure_litellm() {
+  if "${MAAS_ROOT}/scripts/litellm-proxy.sh" status --site "$MAAS_SITE" >/dev/null 2>&1; then
+    return 0
+  fi
+  echo "Starting LiteLLM for site=${MAAS_SITE}..." >&2
+  "${MAAS_ROOT}/scripts/litellm-proxy.sh" start --site "$MAAS_SITE"
+}
+
 maas_run_claude() {
   MAAS_AGENT="claude"
   maas_load_env
   maas_parse_launcher_args "$@"
   maas_pick_site
   maas_pick_model claude
+  maas_ensure_litellm
 
-  local settings="${MAAS_ROOT}/.claude/settings.json"
-  maas_py write-claude-config --site "$MAAS_SITE" --out "$settings" >/dev/null
+  local settings="${MAAS_ROOT}/.runtime/claude.litellm.${MAAS_SITE}.json"
+  maas_write_agent_config claude "$settings" >/dev/null
 
   maas_ensure_claude
   echo "→ site=${MAAS_SITE} model=${MAAS_MODEL}" >&2
+  echo "→ relay=LiteLLM $(maas_py get litellm_relay_base --site "$MAAS_SITE")" >&2
   echo "→ settings=${settings}" >&2
 
   exec claude --settings "$settings" --model "$MAAS_MODEL" "${MAAS_PASSTHRU[@]}"
@@ -294,28 +316,21 @@ maas_run_codex() {
   maas_parse_launcher_args "$@"
   maas_pick_site
   maas_pick_model codex
+  maas_ensure_litellm
 
-  local runtime="${MAAS_ROOT}/.runtime/codex.${MAAS_SITE}"
+  local runtime="${MAAS_ROOT}/.runtime/codex.litellm.${MAAS_SITE}"
   local config_toml="${runtime}/config.toml"
-  maas_py write-codex-config --site "$MAAS_SITE" --model "$MAAS_MODEL" --out "$config_toml" >/dev/null
+  maas_write_agent_config codex "$config_toml" >/dev/null
 
   maas_ensure_codex
   local codex_bin
   codex_bin="$(maas_codex_bin)"
-
-  local api_key_env
-  api_key_env="$(maas_py get api_key_env --site "$MAAS_SITE")"
-  local api_key="${!api_key_env:-}"
-  if [[ -z "$api_key" ]]; then
-    echo "Error: set ${api_key_env} in .env" >&2
-    exit 1
-  fi
+  local api_key
+  api_key="$(maas_py get litellm_master_key --site "$MAAS_SITE")"
 
   echo "→ site=${MAAS_SITE} model=${MAAS_MODEL}" >&2
+  echo "→ relay=LiteLLM $(maas_py get litellm_relay_base --site "$MAAS_SITE")/v1" >&2
   echo "→ config=${config_toml}" >&2
-  if [[ -n "$(maas_py get notes --site "$MAAS_SITE" 2>/dev/null || true)" ]]; then
-    echo "→ note: $(maas_py get notes --site "$MAAS_SITE")" >&2
-  fi
 
   export CODEX_HOME="$runtime"
   export OPENAI_API_KEY="$api_key"
@@ -329,20 +344,18 @@ maas_run_opencode() {
   maas_parse_launcher_args "$@"
   maas_pick_site
   maas_pick_model opencode
+  maas_ensure_litellm
 
-  local config="${MAAS_ROOT}/.runtime/opencode.${MAAS_SITE}.json"
-  maas_py write-opencode-config \
-    --site "$MAAS_SITE" \
-    --model "$MAAS_MODEL" \
-    --out "$config" >/dev/null
+  local config="${MAAS_ROOT}/.runtime/opencode.litellm.${MAAS_SITE}.json"
+  maas_write_agent_config opencode "$config" >/dev/null
 
   maas_ensure_opencode
 
-  local oc_site
-  oc_site="$(maas_py get json --site "$MAAS_SITE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('opencode',{}).get('provider_id','custom'))")"
-  local oc_model="${oc_site}/${MAAS_MODEL}"
+  local oc_model
+  oc_model="$(maas_py get opencode_model --site "$MAAS_SITE")"
 
   echo "→ site=${MAAS_SITE} model=${oc_model}" >&2
+  echo "→ relay=LiteLLM $(maas_py get litellm_relay_base --site "$MAAS_SITE")/v1" >&2
   echo "→ OPENCODE_CONFIG=${config}" >&2
 
   export OPENCODE_CONFIG="$config"

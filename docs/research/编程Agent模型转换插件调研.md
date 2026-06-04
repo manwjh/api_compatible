@@ -45,7 +45,7 @@
 | 转换方向 | 典型场景 |
 |----------|----------|
 | **Anthropic Messages → OpenAI Chat** | Claude Code 对接 DeepSeek / Ollama / 仅 Chat 的中转站 |
-| **OpenAI Responses → OpenAI Chat** | Codex 0.133+ 对接仅 Chat 的中转站（如 b.ai，见 [Codex 报告](../reports/Codex兼容性评估报告.md)） |
+| **OpenAI Responses → OpenAI Chat** | Codex 0.133+ 对接仅 Chat 的中转站（probe 缺 `/v1/responses` 时，见 [reports/](../reports/) 各站点报告） |
 | **OpenAI Responses → Anthropic Messages** | Codex 经网关调用 Claude（需网关双向转换 + tool 语义对齐） |
 | **OpenAI Chat → OpenAI Responses** | OpenCode 某模型走 `/v1/responses`（OpenCode 内置 AI SDK 选型，非外置插件） |
 | **同协议换模型 ID** | 中转站已支持 Agent 所需端点，仅做模型名映射（**不算** 协议转换，但常与本节方案一起出现） |
@@ -68,7 +68,7 @@
 转换层 E2E（◐/?） = 上述任一 × 自建/第三方网关 × 需实测 L3–L5
 ```
 
-本仓库 [reports/](../reports/) 已验证（**E3**）：**Claude Code + b.ai** 无需转换；**Codex + b.ai** 因缺 `/v1/responses` 必须桥接或换上游；**OpenCode + b.ai** 直连 Chat。转换层方案需在相同 L3–L5 维度复测（流式、tool 多轮、reasoning/thinking）。
+本仓库 [reports/](../reports/) 已有 **E3** 批次（首批站点 `b.ai`，三 Agent 同环境对比）：Messages/Chat 对齐的 Agent 可直连；缺 `/v1/responses` 的站点上 Codex 须桥接或换上游。**单站结论不可外推**；换站请重跑 probe 并新增报告。转换层方案需在相同 L3–L5 维度复测（流式、tool 多轮、reasoning/thinking）。
 
 ### 1.4 证据等级
 
@@ -77,8 +77,8 @@
 | **E0** | Agent / 云厂商 **官方文档** | 配置项、端点名称 |
 | **E1** | 网关项目 README / 发行说明 | LiteLLM、CCR 功能声明 |
 | **E2** | 社区讨论、第三方测评 | Codex #7782、Bedrock 网关对比文 |
-| **E3** | **本仓库** `reports/` 实测 | b.ai × 三 Agent |
-| **E4** | **本仓库** 转换层实测 | **尚无** — 见 [§12](#12-后续报告模板) |
+| **E3** | **本仓库** `reports/` 实测 | 登记站点 × Agent（首批见 [reports 索引](../reports/README.md#e3站点--agent-直连2026-06-01)） |
+| **E4** | **本仓库** 转换层实测 | LiteLLM × Codex（站点 `b.ai`）— 见 [§12](#12-后续报告模板) |
 
 阅读原则：**E0–E2 可指导选型与 PoC；上线或团队推广前至少做到 E3（直连）或 E4（经网关）。**
 
@@ -134,7 +134,7 @@ flowchart LR
 | **L1 专用 Router** | Claude Code Router、ccproxy | Claude Code | Anthropic 入、多厂商出；任务路由 | E1 |
 | **L2 轻量代理** | anthropic-proxy、CC-Adapter、codex-bridge 系 | Claude Code / Codex | 单进程、协议对协议 | E1–E2 |
 | **L3 企业网关** | LiteLLM Proxy、New API、One API、Portkey | 三者（能力不一） | 多租户、鉴权、计费、观测 | E0–E2 |
-| **L4 中转站直连** | b.ai 等 | Claude Code ✅ · OpenCode ✅ · Codex ❌ | 无转换，仅当端点已对齐 | **E3**（b.ai） |
+| **L4 中转站直连** | `sites.json` 登记站点 | 视 probe 四项结果 | 无转换，仅当端点已对齐 | **E3**（按站点报告） |
 | **L5 Agent 插件** | OpenCode npm 插件、Codex 市场插件 | 扩展行为 | **不** 替代 L1–L3 | E0 |
 
 ### 3.1 运维与成本粗估
@@ -162,7 +162,7 @@ export ANTHROPIC_AUTH_TOKEN="sk-..."
 export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1
 ```
 
-**本仓库实测（E3）**：[Claude Code + b.ai](../reports/ClaudeCode兼容性评估报告.md) 为 **同协议直连**（b.ai 原生 Messages），非转换。
+**本仓库实测（E3）**：首批站点 [Claude Code 报告](../reports/ClaudeCode兼容性评估报告.md) 为 **同协议直连**（上游原生 Messages），非转换；站点 ID 见报告元信息表。
 
 ### 4.2 Claude Code Router（musistudio/claude-code-router）
 
@@ -297,14 +297,14 @@ OpenCode 默认通过 **Vercel AI SDK** 调用 **`/v1/chat/completions`**。与 
 | `@ai-sdk/anthropic` | Anthropic Messages | 直连 Anthropic |
 | `@ai-sdk/amazon-bedrock` 等 | 各云原生 SDK | SDK 适配，非统一 HTTP 面 |
 
-示例（**E3**，[OpenCode 报告](../reports/OpenCode兼容性评估报告.md)）：
+示例（**E3**，[OpenCode 报告](../reports/OpenCode兼容性评估报告.md)；`baseURL` 对齐 `sites.json` → `base_url`）：
 
 ```json
 {
   "provider": {
-    "bai": {
+    "relay": {
       "npm": "@ai-sdk/openai-compatible",
-      "options": { "baseURL": "https://api.b.ai/v1" },
+      "options": { "baseURL": "https://api.example.com/v1" },
       "models": { "kimi-k2.5": { "name": "Kimi K2.5" } }
     }
   }
@@ -347,7 +347,10 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 **版本提示（E2）**：锁定 LiteLLM 版本并记录于报告；升级后重跑 L4 tool 探针。
 
-### 7.2 New API / One API（中转管理面）
+**E4 实测（LiteLLM 1.83.9 × Codex × 仅 Chat 站点）**：见 [LiteLLM × Codex 转换层评估报告](../reports/LiteLLM-Codex转换层评估报告.md)（本次站点 ID：`b.ai`）。要点：
+
+- 配置须 `custom_llm_provider: custom`；`openai/*` 会把 `/v1/responses` **原样转发**至上游，对未开放 Responses 的站点会 403/404。
+- curl 级 L2–L3 ✅；Codex `exec` ❌（`client_metadata` → LiteLLM 500）。
 
 本仓库 `upstream/pull.sh newapi` 可拉取参考实现到 `upstream/newapi/`。典型能力：
 
@@ -355,22 +358,24 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 - 常暴露 **OpenAI Chat** + **Anthropic Messages**  
 - **`/v1/responses` 因部署版本、渠道、管理员开关而异** — 不可凭文档假设  
 
-#### 用 `probe-endpoints.sh` 解读中转站
+#### 用 Layer 1–2 评估解读中转站
 
 ```bash
-./experiment/user-side/scripts/probe-endpoints.sh <site>
+cd experiment/user-side
+./scripts/assess-platform.sh --site <site>
+./scripts/assess-protocol.sh --site <site>
 ```
 
-脚本（`experiment/user-side/lib/maas.py probe-endpoints`）对站点 `base_url` 探测四项并给出 **Agent readiness**：
+`assess-protocol`（`maas.py`）按 **protocol profile** 直打源，输出 scope 内 **Agent native readiness**：
 
 | 探测 | 通过时含义 | 对应 Agent |
 |------|------------|------------|
-| `GET /v1/models` | 模型发现可用 | 辅助项 |
+| `GET /v1/models` | Layer 1 catalog 分支 | 辅助项 |
 | `POST /v1/chat/completions` | Chat 协议可达 | **OpenCode** |
 | `POST /v1/messages` | Messages 协议可达 | **Claude Code** |
 | `POST /v1/responses` | Responses 协议可达 | **Codex** |
 
-**b.ai 实测（E3）** 典型输出逻辑：`chat` + `messages` = OK，`responses` = 404/403 → Claude Code / OpenCode **直连**，Codex **否**。
+**E3 常见模式（非普适定律）**：若 `chat` + `messages` = OK 而 `responses` = 404/403，则 Claude Code / OpenCode 可 **经 LiteLLM 直通**，Codex 须 **桥接或换站**；具体以 `assess-protocol` 与对应报告为准。
 
 若自建 New API 仍缺 `/v1/responses`，Codex 路径为：**New API（Chat）← codex-bridge ← Codex**，而非强行改 `wire_api = "chat"`（0.133+ 已不支持）。
 
@@ -419,13 +424,13 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 | 方案 | 规模信号 | 维护信号 | 生产建议 | 本仓库 E4 |
 |------|----------|----------|----------|-----------|
-| **LiteLLM** | 超大社区 | 活跃发行、企业采用多 | 团队首选 L3；锁版本 + 实测 | 无 |
+| **LiteLLM** | 超大社区 | 活跃发行、企业采用多 | 团队首选 L3；锁版本 + 实测 | **E4 部分**（见 [LiteLLM × Codex 报告](../reports/LiteLLM-Codex转换层评估报告.md)） |
 | **Claude Code Router** | ~34k stars | 2026-03 仍有 push；issues 多 | 个人/小团队 Claude Code 换模型首选 | 无 |
 | **anthropic-proxy-rs** | 中等 | crates 发布 | 轻量 Messages→Chat | 无 |
 | **CC-Adapter** | ~50 stars | 2026-04 v0.5.x；单维护者 | PoC / 个人；生产需自担风险 | 无 |
 | **codex-bridge 系** | 小 | 分散、实验性 | **仅 PoC**；优先评估 LiteLLM 或换 Agent | 无 |
 | **va-ai-api-bridge** | 库 | crates | 自研桥接的基础组件 | 无 |
-| **New API / One API** | 大（自托管圈） | 随 fork 而异 | 先 **probe**，再定是否外置 bridge | 无（b.ai 为 E3 直连） |
+| **New API / One API** | 大（自托管圈） | 随 fork 而异 | 先 **probe**，再定是否外置 bridge | 无（E3 以各站点报告为准） |
 
 ---
 
@@ -438,7 +443,7 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 | 个人：Claude Code + 本地 Ollama | **CCR** 或 **anthropic-proxy-rs** |
 | 个人：Codex + 仅 Chat 中转站 | **LiteLLM Responses** 或 **codex-bridge PoC**；长期更稳是换 **OpenCode / Claude Code** |
 | 团队：多 Agent、多模型、审计 | **LiteLLM** 统一部署；三端点分别配置 |
-| 已购 b.ai 类中转站 | **Claude Code + OpenCode 直连（E3）**；Codex 除非站点 probe 通过 `/v1/responses` 否则 **不建议** |
+| Token 中转站（`sites.json` 登记） | 以 **probe 四项** 为准：Messages/Chat 对齐则 Claude Code / OpenCode 可直连（E3）；Codex 须 `/v1/responses` 通过或外置桥接；LiteLLM 桥接 **未** 打通 Codex E2E（见 E4 报告） |
 | 希望最少运维 | [E2E 全景 §3](./E2E原生兼容性全景.md#3-兼容性总矩阵) **原生 ●**，避免桥接 |
 
 ### 9.2 Claude Code：CCR vs LiteLLM vs 轻量代理
@@ -455,15 +460,15 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 | 维度 | 部署 codex-bridge | 换 Claude Code / OpenCode |
 |------|-------------------|---------------------------|
 | 保留 Codex UX | ✅ | ❌ |
-| 工程复杂度 | 高（L4 tool 易失败） | 低（b.ai 已 E3） |
+| 工程复杂度 | 高（L4 tool 易失败） | 低（probe 通过时） |
 | 维护 | 自维护桥 + 上游 | 仅上游 |
-| **b.ai 用户** | 不推荐为首选项 | **推荐** |
+| **probe 缺 Responses 的站点** | 不推荐为首选项 | **推荐**（换 Agent 或换上游） |
 
 ### 9.4 决策流
 
 ```text
 1. 确定 Agent → 硬性端点（messages / responses / chat）
-2. ./experiment/user-side/scripts/probe-endpoints.sh <site>
+2. cd experiment/user-side && ./scripts/assess-platform.sh + assess-protocol.sh --site <site>
    ├─ 对应端点 OK → 直连（t_*），写 E3 report
    └─ 否 → 选 L1/L2/L3 网关
 3. PoC 网关 → L3 流式 → L4 tool 多轮 → L5 thinking
@@ -493,10 +498,11 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 | 现象 | 根因 | 涉及 | 证据 |
 |------|------|------|------|
-| Codex `doctor` WebSocket 403 | 上游无 Responses WS | Codex + b.ai | **E3** |
-| Codex 报「model only supported in v1/responses」 | 上游仅 Chat | Codex + b.ai | **E3** |
-| Claude Code Sonnet 403 | 账户/渠道权限，非协议 | Claude Code + b.ai | **E3** |
+| Codex `doctor` WebSocket 403 | 上游无 Responses WS | Codex + 缺 Responses 站点 | **E3** |
+| Codex 报「model only supported in v1/responses」 | 上游仅 Chat | Codex + 仅 Chat 站点 | **E3** |
+| Claude Code Sonnet 403 | 账户/渠道权限，非协议 | Claude Code + 商业 Token 站 | **E3** |
 | LiteLLM → Bedrock tool 校验失败 | `toolSpec.name` 映射空 | Codex + LiteLLM | **E2** |
+| LiteLLM `client_metadata` 500 | 桥接路径未剥离 Codex 专有字段 | Codex + LiteLLM + 仅 Chat 上游 | **E4** |
 | CCR + 弱 tool 模型 | 上游不支持 function calling | Claude Code | **E2** 归纳 |
 | 桥接层 L2 200 但 L4 失败 | items/messages 多轮上下文丢失 | Codex bridge | **E2** 归纳 |
 
@@ -504,7 +510,7 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 ```bash
 # L2 协议探测
-./experiment/user-side/scripts/probe-endpoints.sh <site>
+./scripts/assess-protocol.sh --site <site>
 
 # E3/E4 Agent 探针（直连或转换层配置完成后）
 ./experiment/user-side/t_claude --site <site> --model <model> -y
@@ -543,9 +549,10 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 - [E2E 原生兼容性全景](./E2E原生兼容性全景.md)
 - [中转站主流技术栈调研](./中转站主流技术栈调研.md)
 - [兼容性评估报告索引](../reports/README.md)
-- [Codex × b.ai 不兼容](../reports/Codex兼容性评估报告.md)
-- [Claude Code × b.ai 基本兼容](../reports/ClaudeCode兼容性评估报告.md)
-- [OpenCode × b.ai 兼容](../reports/OpenCode兼容性评估报告.md)
+- [Codex 兼容性评估报告（E3 样例站点）](../reports/Codex兼容性评估报告.md)
+- [Claude Code 兼容性评估报告（E3 样例站点）](../reports/ClaudeCode兼容性评估报告.md)
+- [OpenCode 兼容性评估报告（E3 样例站点）](../reports/OpenCode兼容性评估报告.md)
+- [LiteLLM × Codex 转换层 E4](../reports/LiteLLM-Codex转换层评估报告.md)
 
 ---
 
@@ -557,7 +564,7 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 |------|------|
 | 评估对象 | 网关名称 + 版本号（如 `litellm 1.82.5`） |
 | 拓扑 | `Agent → 网关:端口/路径 → 上游 site` |
-| L2 | `probe-endpoints` 或 curl 截图 |
+| Layer 2 | `assess-protocol` 或 curl 截图 |
 | L3 | 流式是否挂起 |
 | L4 | tool 多轮（Bash/Read 或 Codex shell） |
 | L5 | thinking / reasoning（若适用） |
@@ -566,10 +573,10 @@ OpenCode **没有** CCR 级内置多协议 Router；多模型靠 **agent 级 `mo
 
 **优先建议的 E4 候选**（填补本文最大空白）：
 
-1. `LiteLLM /v1/responses` + b.ai Chat 渠道 + Codex  
-2. `CCR` + DeepSeek + Claude Code（L4 tool）  
-3. 自建 New API + `probe-endpoints` 全绿时的 Codex 直连（若未来 b.ai 上线 Responses）
+1. ~~`LiteLLM /v1/responses` + 仅 Chat 上游 + Codex~~ → 见 [LiteLLM × Codex 转换层报告](../reports/LiteLLM-Codex转换层评估报告.md)（curl L2–L3 ✅，Codex E2E ❌）
+2. `CCR` + DeepSeek + Claude Code（L4 tool）
+3. 自建 New API + Layer 2 全绿时的 Codex 经 LiteLLM 桥接
 
 ---
 
-**一句话**：Claude Code 要 **Messages 网关**，Codex 要 **Responses 桥**，OpenCode 要 **Chat 或 SDK**；「插件」多数扩展工具而非换协议 — 真正的转换在 **Router / 代理 / LiteLLM** 层完成；本文是 **方案地图（E0–E2）+ b.ai 锚点（E3）**，上线前请补 **E4 实测**。
+**一句话**：Claude Code 要 **Messages 网关**，Codex 要 **Responses 桥**，OpenCode 要 **Chat 或 SDK**；「插件」多数扩展工具而非换协议 — 真正的转换在 **Router / 代理 / LiteLLM** 层完成；本文是 **方案地图（E0–E2）+ reports 实证（E3/E4）**，上线前请对 **目标站点** 补全 probe 与 L3–L5。

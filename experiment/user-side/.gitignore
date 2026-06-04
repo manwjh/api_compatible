@@ -1,6 +1,5 @@
 # Secrets & local runtime (work from this directory)
 .env
-.claude/
 .runtime/
 opencode.json
 

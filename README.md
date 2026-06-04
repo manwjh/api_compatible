@@ -4,7 +4,7 @@
 
 ## 研究问题
 
-在接入 **上游模型源**（云厂商官方 API 或 Token 中转站）之前，能否判断 **Coding Agent**（Codex、Claude Code、OpenCode 等）在该链路上 **协议对齐、端到端可跑**？
+在接入 **上游模型源** 之前，能否判断 **指定 Coding Agent** 在 **源 → LiteLLM → Agent** 链路上 **协议对齐、端到端可跑**？LiteLLM 承担 **计量** 与 **接口转换**；Agent 只连 Runner 本机 Proxy。
 
 | 维度 | 关注点 |
 |------|--------|
@@ -12,7 +12,7 @@
 | **中转站栈** | New API / One API / LiteLLM 等实现差异与探测方法 |
 | **网关转换** | 协议桥接方案地图（非「能 curl 通」即兼容） |
 | **实验可复现** | 用户侧隔离 Runner、中转站原型 EC2、出站审计与语料采集 |
-| **实证** | 站点 × Agent 的 L2–L5 结论与复现步骤 |
+| **实证** | 源 × Agent 的 L2–L5 结论与复现步骤 |
 
 > Key 有效、`/v1/models` 可达 **≠** Agent 可用 — 这是研究的主线判断，详见 [E2E 原生兼容性全景](./docs/research/E2E原生兼容性全景.md)。
 
@@ -95,11 +95,9 @@ api_compatible/
 ```bash
 cd experiment/user-side
 cp .env.example .env
-./t_claude --site b.ai --model claude-haiku-4.5 -y
-
-# 用户侧 EC2 Runner
-./scripts/run-user-side-compat.sh --site b.ai --probe-only
-./scripts/run-user-side-compat.sh --site newapi-prototype --smoke
+./scripts/assess-platform.sh --site <site-id>
+./scripts/assess-protocol.sh --site <site-id>
+./scripts/assess-source.sh --site <site-id> --agent claude --smoke
 ```
 
 - 启动器细节、代理（v2rayN）、新增站点：见 [experiment/user-side/AGENTS.md](./experiment/user-side/AGENTS.md)。  

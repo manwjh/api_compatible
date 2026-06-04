@@ -1,31 +1,32 @@
 #!/usr/bin/env bash
-# User-side EC2 compatibility automation: L2 probe + optional L3 smoke via t_*.
-# See docs/experiment/EC2-用户侧隔离实验点设计.md §8.
+# Batch: Layer 1+2 once, then Layer 3 per agent (protocol-scoped by default).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SITE=""
+LAYERS_12=0
 PROBE_ONLY=0
 SMOKE=0
-AGENTS=(claude codex opencode)
+AGENTS=()
+AGENTS_SET=0
 
 usage() {
   cat <<'EOF'
 Usage: experiment/user-side/scripts/run-user-side-compat.sh --site SITE [options]
 
-Run on the user-side EC2 Runner (see docs/experiment/EC2-用户侧隔离实验点设计.md).
-Work from the experiment/user-side/ directory (or use experiment/user-side/ prefix from repo root).
+Batch: Layer 1 + 2 on source, then Layer 3 per agent.
 
 Options:
-  --site ID       Required. sites.json site id (e.g. b.ai, newapi-prototype)
-  --probe-only    Only run probe-endpoints.sh (L2)
-  --smoke         After probe, run non-interactive smoke via ./t_* -y
-  --agents LIST   Comma-separated: claude,codex,opencode (default: all)
+  --site ID       Required. sites.json site id
+  --layers-12     Only run Layer 1 (platform) + Layer 2 (protocol)
+  --probe-only    Layer 3 relay probe per agent (no smoke)
+  --smoke         Layer 3 relay probe + Agent smoke per agent
+  --agents LIST   Comma-separated: claude,codex,opencode
+                  Default: protocol scope from sites.json (see CONFIG.md)
   -h, --help      Show this help
 
 Examples:
   ./scripts/run-user-side-compat.sh --site b.ai --probe-only
-  ./scripts/run-user-side-compat.sh --site newapi-prototype --smoke
   ./scripts/run-user-side-compat.sh --site b.ai --smoke --agents claude,opencode
 EOF
 }
@@ -35,6 +36,10 @@ while [[ $# -gt 0 ]]; do
     --site)
       SITE="${2:-}"
       shift 2
+      ;;
+    --layers-12)
+      LAYERS_12=1
+      shift
       ;;
     --probe-only)
       PROBE_ONLY=1
@@ -46,6 +51,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --agents)
       IFS=',' read -r -a AGENTS <<< "${2:-}"
+      AGENTS_SET=1
       shift 2
       ;;
     -h|--help)
@@ -66,6 +72,12 @@ if [[ -z "$SITE" ]]; then
   exit 1
 fi
 
+if [[ "$LAYERS_12" -eq 0 && "$PROBE_ONLY" -eq 0 && "$SMOKE" -eq 0 ]]; then
+  echo "Error: specify --layers-12, --probe-only, or --smoke" >&2
+  usage >&2
+  exit 1
+fi
+
 if [[ -f "${ROOT}/.env" ]]; then
   set -a
   # shellcheck disable=SC1091
@@ -75,43 +87,37 @@ fi
 
 cd "$ROOT"
 
-echo "==> L2 probe: site=${SITE}"
-./scripts/probe-endpoints.sh "$SITE"
-
-if [[ "$PROBE_ONLY" -eq 1 ]]; then
-  echo "==> Done (--probe-only)"
-  exit 0
+if [[ "$AGENTS_SET" -eq 0 ]]; then
+  IFS=',' read -r -a AGENTS <<< "$(python3 "${ROOT}/lib/maas.py" get assess_agents --site "$SITE")"
 fi
 
-if [[ "$SMOKE" -eq 0 ]]; then
-  echo "==> L2 complete. Use --smoke for L3 smoke, or run ./t_* manually for L4."
-  exit 0
+if [[ "$LAYERS_12" -eq 1 || "$PROBE_ONLY" -eq 1 || "$SMOKE" -eq 1 ]]; then
+  ./scripts/assess-platform.sh --site "$SITE"
+  echo ""
+  ./scripts/assess-protocol.sh --site "$SITE"
 fi
 
-smoke_claude() {
-  echo "==> smoke: t_claude"
-  ./t_claude --site "$SITE" -y -- --print --max-budget-usd 1.00 "Reply with exactly: API OK"
-}
-
-smoke_codex() {
-  echo "==> smoke: t_codex exec"
-  ./t_codex --site "$SITE" -y -- exec "Reply with exactly: API OK"
-}
-
-smoke_opencode() {
-  echo "==> smoke: t_opencode run"
-  ./t_opencode --site "$SITE" -y -- run "Reply with exactly: API OK"
-}
+if [[ "$LAYERS_12" -eq 1 ]]; then
+  echo "==> Layers 1–2 finished for site=${SITE}"
+  exit 0
+fi
 
 for agent in "${AGENTS[@]}"; do
   case "$agent" in
-    claude) smoke_claude ;;
-    codex) smoke_codex ;;
-    opencode) smoke_opencode ;;
+    claude|codex|opencode)
+      flags=(--site "$SITE" --agent "$agent")
+      if [[ "$PROBE_ONLY" -eq 1 ]]; then
+        flags+=(--probe-only)
+      fi
+      if [[ "$SMOKE" -eq 1 ]]; then
+        flags+=(--smoke)
+      fi
+      ./scripts/run-source-agent-test.sh "${flags[@]}"
+      ;;
     *)
       echo "Warning: unknown agent '${agent}', skip" >&2
       ;;
   esac
 done
 
-echo "==> Smoke finished for site=${SITE}"
+echo "==> Batch finished for site=${SITE} agents=${AGENTS[*]}"

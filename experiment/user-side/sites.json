@@ -1,23 +1,32 @@
 {
-  "description": "Upstream site registry. API keys live in .env — see each site's api_key_env.",
+  "description": "Upstream site registry — describes the source only (identity, endpoints, documented model list). Keys in .env via api_key_env. Test execution: assess-plan.json.",
   "default_site": "b.ai",
   "sites": {
     "b.ai": {
       "name": "b.ai",
+      "protocol": "anthropic",
       "base_url": "https://api.b.ai/v1",
       "anthropic_base_url": "https://api.b.ai",
       "api_key_env": "BAI_API_KEY",
-      "opencode": {
-        "provider_id": "bai",
-        "provider_name": "b.ai",
-        "npm": "@ai-sdk/openai-compatible"
-      },
-      "default_models": {
-        "claude": "claude-haiku-4.5",
-        "codex": "gpt-5-mini",
-        "opencode": "kimi-k2.5"
-      },
-      "notes": "Chat Completions + Messages API; no /v1/responses (Codex blocked)"
+      "supported_models": [],
+      "notes": "Chat Completions + Messages API; no /v1/responses (Codex blocked). Fill supported_models when vendor doc list is known."
+    },
+    "ai.oai.red": {
+      "name": "ai.oai.red",
+      "report_domain": "ai.oai.red",
+      "protocol": "openai",
+      "base_url": "https://ai.oai.red/v1",
+      "anthropic_base_url": "https://ai.oai.red",
+      "api_key_env": "OAI_RED_API_KEY",
+      "supported_models": [
+        "gpt-5.4",
+        "gpt-5.4-mini",
+        "gpt-5.4-mini-openai-compact",
+        "gpt-5.4-openai-compact",
+        "gpt-5.5",
+        "gpt-5.5-openai-compact"
+      ],
+      "notes": "OpenAI-compatible relay; supported_models from vendor docs (not GET /v1/models)"
     }
   }
 }
